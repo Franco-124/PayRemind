@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 
-const CHECKOUT_URL = "https://payremind.lemonsqueezy.com/buy/checkout-url";
+const CHECKOUT_URL = "https://payremind.lemonsqueezy.com/checkout/buy/69ade413-496f-479e-b5db-a1aa7314f163";
 
 interface UserInfo {
   id: string;
