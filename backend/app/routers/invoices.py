@@ -75,6 +75,15 @@ def delete_invoice(
     invoice_service.delete_invoice(invoice_id, current_user.id, db)
 
 
+@router.patch("/{invoice_id}/reminders/toggle", response_model=InvoiceResponse)
+def toggle_reminders(
+    invoice_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> InvoiceResponse:
+    return invoice_service.toggle_reminders(invoice_id, current_user.id, db)
+
+
 @router.post(
     "/{invoice_id}/test-reminder",
     response_model=dict,

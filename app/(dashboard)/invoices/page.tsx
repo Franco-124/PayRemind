@@ -32,7 +32,7 @@ interface Invoice {
 }
 
 interface InvoiceDetail extends Invoice {
-  email_logs?: EmailLog[];
+  email_logs: EmailLog[];
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -43,6 +43,9 @@ const STATUS_COLOR: Record<string, string> = {
   overdue: "bg-red-100 text-red-800",
   paid: "bg-green-100 text-green-800",
   cancelled: "bg-gray-100 text-gray-600",
+};
+const TONE_LABEL: Record<string, string> = {
+  friendly: "Amable", firm: "Firme", final: "Final",
 };
 
 interface CreateForm {
@@ -60,6 +63,28 @@ const EMPTY_FORM: CreateForm = {
   due_date: "", description: "", reminder_active: true,
 };
 
+function nextReminderLabel(inv: Invoice): string {
+  if (inv.status === "paid" || inv.status === "cancelled") return "—";
+  if (!inv.reminder_config.active) return "⏸ Pausado";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(inv.due_date + "T00:00:00");
+  const daysSinceDue = Math.floor((today.getTime() - due.getTime()) / 86400000);
+
+  if (daysSinceDue < 0) {
+    return `Vence en ${Math.abs(daysSinceDue)} días`;
+  }
+
+  const intervals = inv.reminder_config.intervals ?? [3, 7, 14];
+  const next = intervals.find((d) => d > daysSinceDue);
+  if (next !== undefined) {
+    const daysLeft = next - daysSinceDue;
+    return `Día ${next} — en ${daysLeft} día${daysLeft === 1 ? "" : "s"}`;
+  }
+  return "Ciclo completado";
+}
+
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -76,8 +101,9 @@ export default function InvoicesPage() {
 
   const [detailInvoice, setDetailInvoice] = useState<InvoiceDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
-  const [markingId, setMarkingId] = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
 
   function flash(msg: string) {
     setSuccess(msg);
@@ -132,7 +158,7 @@ export default function InvoicesPage() {
   }
 
   async function handleMarkPaid(id: string) {
-    setMarkingId(id);
+    setActionId(id + ":paid");
     try {
       await apiClient.patch(`/invoices/${id}/status`, { status: "paid" });
       flash("Factura marcada como pagada");
@@ -140,7 +166,20 @@ export default function InvoicesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al actualizar");
     } finally {
-      setMarkingId(null);
+      setActionId(null);
+    }
+  }
+
+  async function handleToggleReminder(id: string) {
+    setActionId(id + ":toggle");
+    try {
+      await apiClient.patch(`/invoices/${id}/reminders/toggle`, {});
+      flash("Recordatorios actualizados");
+      fetchInvoices();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setActionId(null);
     }
   }
 
@@ -153,6 +192,20 @@ export default function InvoicesPage() {
       setError(err instanceof Error ? err.message : "Error al cargar detalle");
     } finally {
       setDetailLoading(false);
+    }
+  }
+
+  async function handleSendNow(id: string) {
+    setSendingReminder(true);
+    try {
+      await apiClient.post(`/invoices/${id}/test-reminder`, {});
+      flash("Recordatorio enviado");
+      const updated = await apiClient.get<InvoiceDetail>(`/invoices/${id}`);
+      setDetailInvoice(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al enviar");
+    } finally {
+      setSendingReminder(false);
     }
   }
 
@@ -176,15 +229,20 @@ export default function InvoicesPage() {
         )}
       </div>
 
+      {/* Info banner */}
+      <div className="flex items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+        <span className="mt-0.5 shrink-0">ℹ️</span>
+        <span>
+          Los recordatorios se envían automáticamente a las <strong>9:00 AM UTC</strong> en los días <strong>3, 7 y 14</strong> después del vencimiento.
+          Marcá una factura como pagada para detenerlos.
+        </span>
+      </div>
+
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
       {success && (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-          {success}
-        </div>
+        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">{success}</div>
       )}
 
       {/* Filter */}
@@ -209,56 +267,71 @@ export default function InvoicesPage() {
         {loading ? (
           <div className="px-6 py-10 text-sm text-gray-400 text-center">Cargando...</div>
         ) : invoices.length === 0 ? (
-          <div className="px-6 py-10 text-sm text-gray-400 text-center">
-            No hay facturas para este filtro.
-          </div>
+          <div className="px-6 py-10 text-sm text-gray-400 text-center">No hay facturas para este filtro.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  {["#", "Cliente", "Monto", "Vencimiento", "Estado", "Acciones"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  {["#", "Cliente", "Monto", "Vencimiento", "Estado", "Próx. recordatorio", "Acciones"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-3 font-mono text-gray-700">{inv.invoice_number}</td>
-                    <td className="px-6 py-3 text-gray-900">{inv.client.name}</td>
-                    <td className="px-6 py-3 text-gray-900">
-                      {inv.currency} {Number(inv.amount).toLocaleString("es")}
-                    </td>
-                    <td className="px-6 py-3 text-gray-600">{inv.due_date}</td>
-                    <td className="px-6 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[inv.status]}`}>
-                        {STATUS_LABEL[inv.status]}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center gap-3">
-                        {inv.status !== "paid" && inv.status !== "cancelled" && (
+                {invoices.map((inv) => {
+                  const isActive = inv.status === "pending" || inv.status === "overdue";
+                  const isPaid = actionId === inv.id + ":paid";
+                  const isToggling = actionId === inv.id + ":toggle";
+                  return (
+                    <tr key={inv.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 font-mono text-gray-700 whitespace-nowrap">{inv.invoice_number}</td>
+                      <td className="px-4 py-3 text-gray-900">{inv.client.name}</td>
+                      <td className="px-4 py-3 text-gray-900 whitespace-nowrap">
+                        {inv.currency} {Number(inv.amount).toLocaleString("es")}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{inv.due_date}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[inv.status]}`}>
+                          {STATUS_LABEL[inv.status]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                        {nextReminderLabel(inv)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {isActive && (
+                            <>
+                              <button
+                                onClick={() => handleMarkPaid(inv.id)}
+                                disabled={!!actionId}
+                                className="text-green-600 hover:text-green-800 text-xs font-medium disabled:opacity-50 transition whitespace-nowrap"
+                              >
+                                {isPaid ? "..." : "✓ Pagada"}
+                              </button>
+                              <button
+                                onClick={() => handleToggleReminder(inv.id)}
+                                disabled={!!actionId}
+                                className="text-gray-500 hover:text-gray-800 text-xs font-medium disabled:opacity-50 transition whitespace-nowrap"
+                              >
+                                {isToggling ? "..." : inv.reminder_config.active ? "⏸ Pausar" : "▶ Reanudar"}
+                              </button>
+                            </>
+                          )}
                           <button
-                            onClick={() => handleMarkPaid(inv.id)}
-                            disabled={markingId === inv.id}
-                            className="text-green-600 hover:text-green-800 text-xs font-medium disabled:opacity-50 transition"
+                            onClick={() => openDetail(inv.id)}
+                            className="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition whitespace-nowrap"
                           >
-                            {markingId === inv.id ? "..." : "Marcar pagada"}
+                            Ver emails
                           </button>
-                        )}
-                        <button
-                          onClick={() => openDetail(inv.id)}
-                          className="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition"
-                        >
-                          Ver detalle
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -347,15 +420,12 @@ export default function InvoicesPage() {
                     form.reminder_active ? "bg-indigo-600" : "bg-gray-300"
                   }`}
                 >
-                  <span
-                    className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${
-                      form.reminder_active ? "translate-x-4" : "translate-x-0.5"
-                    }`}
-                  />
+                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${
+                    form.reminder_active ? "translate-x-4" : "translate-x-0.5"
+                  }`} />
                 </button>
                 <span className="text-sm text-gray-700">
-                  Recordatorios automáticos{" "}
-                  <span className="text-gray-400">(días 3, 7 y 14)</span>
+                  Recordatorios automáticos <span className="text-gray-400">(días 3, 7 y 14)</span>
                 </span>
               </div>
 
@@ -387,6 +457,7 @@ export default function InvoicesPage() {
               <p className="text-sm text-gray-400 text-center py-8">Cargando...</p>
             ) : detailInvoice ? (
               <>
+                {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">
@@ -399,17 +470,48 @@ export default function InvoicesPage() {
                   </span>
                 </div>
 
-                <dl className="grid grid-cols-2 gap-3 text-sm mb-6">
-                  <Dt label="Monto">{detailInvoice.currency} {Number(detailInvoice.amount).toLocaleString("es")}</Dt>
+                {/* Summary */}
+                <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
+                  <Dt label="Monto">
+                    {detailInvoice.currency} {Number(detailInvoice.amount).toLocaleString("es")}
+                  </Dt>
                   <Dt label="Vencimiento">{detailInvoice.due_date}</Dt>
+                  <Dt label="Días vencida">
+                    {(() => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const due = new Date(detailInvoice.due_date + "T00:00:00");
+                      const days = Math.floor((today.getTime() - due.getTime()) / 86400000);
+                      return days < 0 ? `Vence en ${Math.abs(days)} días` : `${days} días`;
+                    })()}
+                  </Dt>
+                  <Dt label="Recordatorios">
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      detailInvoice.reminder_config.active
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {detailInvoice.reminder_config.active ? "▶ Activos" : "⏸ Pausados"}
+                    </span>
+                  </Dt>
                   {detailInvoice.description && (
                     <Dt label="Descripción" full>{detailInvoice.description}</Dt>
                   )}
                 </dl>
 
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                  Historial de emails
-                </h3>
+                {/* Send now button */}
+                {(detailInvoice.status === "pending" || detailInvoice.status === "overdue") && (
+                  <button
+                    onClick={() => handleSendNow(detailInvoice.id)}
+                    disabled={sendingReminder}
+                    className="w-full mb-5 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-60 transition"
+                  >
+                    {sendingReminder ? "Enviando..." : "📧 Enviar recordatorio ahora"}
+                  </button>
+                )}
+
+                {/* Email history */}
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Historial de emails</h3>
                 {!detailInvoice.email_logs || detailInvoice.email_logs.length === 0 ? (
                   <p className="text-sm text-gray-400">No se han enviado emails aún.</p>
                 ) : (
@@ -417,16 +519,22 @@ export default function InvoicesPage() {
                     {detailInvoice.email_logs.map((log) => (
                       <div key={log.id} className="rounded-lg border border-gray-200 px-4 py-3 text-sm">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-gray-900">
-                            Día {log.reminder_day} · {log.tone}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">Día {log.reminder_day}</span>
+                            <span className="text-xs text-gray-400">·</span>
+                            <span className="text-xs text-gray-500">
+                              {TONE_LABEL[log.tone] ?? log.tone}
+                            </span>
+                          </div>
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            log.status === "sent" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                            log.status === "sent" ? "bg-green-100 text-green-700" :
+                            log.status === "opened" ? "bg-blue-100 text-blue-700" :
+                            "bg-red-100 text-red-700"
                           }`}>
-                            {log.status}
+                            {log.status === "sent" ? "Enviado" : log.status === "opened" ? "Abierto" : "Fallido"}
                           </span>
                         </div>
-                        <p className="text-gray-500 mt-1">
+                        <p className="text-gray-400 text-xs mt-1">
                           {new Date(log.sent_at).toLocaleString("es")}
                         </p>
                         {log.error_message && (

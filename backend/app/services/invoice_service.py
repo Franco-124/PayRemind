@@ -121,6 +121,18 @@ def update_invoice_status(
     return invoice
 
 
+def toggle_reminders(invoice_id: str, user_id: str, db: Session) -> Invoice:
+    """Toggle reminder_config.active for an invoice."""
+    invoice = get_invoice(invoice_id, user_id, db)
+    config = dict(invoice.reminder_config)
+    config["active"] = not config.get("active", True)
+    invoice.reminder_config = config
+    _commit(db)
+    db.refresh(invoice)
+    db.refresh(invoice, ["client"])
+    return invoice
+
+
 def delete_invoice(invoice_id: str, user_id: str, db: Session) -> None:
     """Delete an invoice after verifying ownership."""
     invoice = get_invoice(invoice_id, user_id, db)
