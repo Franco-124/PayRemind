@@ -72,6 +72,7 @@ def generate_email_content(
             "- Firma con el nombre del freelancer"
         )
 
+        print(f"[reminder_service] Generating email for invoice {invoice_number}, tone: {tone}")
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -83,7 +84,9 @@ def generate_email_content(
         )
 
         text = response.choices[0].message.content or ""
-        return _parse_email_response(text, fallback_subject, fallback_body)
+        subject, body = _parse_email_response(text, fallback_subject, fallback_body)
+        print(f"[reminder_service] Email generated - subject: {subject}")
+        return subject, body
 
     except Exception as e:
         print(f"[reminder_service] OpenAI error: {e} — using fallback email")
@@ -184,6 +187,7 @@ def process_pending_reminders(db: Session) -> None:
             tone=tone,
         )
 
+        print(f"[reminder_service] Sending email to: {invoice.client.email}")
         success = send_email(invoice.client.email, subject, body)
 
         log = EmailLog(
