@@ -34,6 +34,7 @@ export default function ClientsPage() {
   const [saving, setSaving] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   async function fetchClients() {
     try {
@@ -77,7 +78,13 @@ export default function ClientsPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`¿Eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
+    setConfirmDelete({ id, name });
+  }
+
+  async function confirmDeleteAction() {
+    if (!confirmDelete) return;
+    const { id } = confirmDelete;
+    setConfirmDelete(null);
     setDeletingId(id);
     try {
       await apiClient.delete(`/clients/${id}`);
@@ -151,6 +158,35 @@ export default function ClientsPage() {
           </div>
         )}
       </div>
+
+      {/* Confirm Delete Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+              <span className="text-xl">🗑️</span>
+            </div>
+            <h2 className="text-base font-semibold text-gray-900 mb-1">¿Eliminar cliente?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Vas a eliminar a <strong>{confirmDelete.name}</strong>. Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteAction}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {modalOpen && (
