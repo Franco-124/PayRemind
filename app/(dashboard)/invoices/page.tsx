@@ -104,6 +104,7 @@ export default function InvoicesPage() {
   const [sendingReminder, setSendingReminder] = useState(false);
 
   const [actionId, setActionId] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   function flash(msg: string) {
     setSuccess(msg);
@@ -151,7 +152,13 @@ export default function InvoicesPage() {
       flash("Factura creada correctamente");
       fetchInvoices();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Error al crear factura");
+      const msg = err instanceof Error ? err.message : "Error al crear factura";
+      if (msg === "free_plan_limit_reached") {
+        setCreateOpen(false);
+        setUpgradeOpen(true);
+      } else {
+        setFormError(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -445,6 +452,50 @@ export default function InvoicesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {upgradeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
+              <span className="text-2xl">🚀</span>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Límite del plan Free alcanzado
+            </h2>
+            <p className="text-sm text-gray-500 mb-6">
+              El plan gratuito permite hasta <strong>3 facturas activas</strong>. Actualizá al plan Pro para crear facturas ilimitadas con recordatorios automáticos.
+            </p>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-6 py-4 mb-6 text-left">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-semibold text-indigo-900">Plan Pro</span>
+                <span className="text-xl font-bold text-indigo-700">$12/mes</span>
+              </div>
+              <ul className="text-sm text-indigo-700 space-y-1">
+                <li>✓ Facturas ilimitadas</li>
+                <li>✓ Recordatorios automáticos</li>
+                <li>✓ Emails generados con IA</li>
+              </ul>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUpgradeOpen(false)}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+              >
+                Ahora no
+              </button>
+              <a
+                href="https://payremind.lemonsqueezy.com/checkout/buy/69ade413-496f-479e-b5db-a1aa7314f163"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition text-center"
+              >
+                Actualizar a Pro
+              </a>
+            </div>
           </div>
         </div>
       )}

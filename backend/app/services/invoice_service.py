@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.client import Client
 from app.models.invoice import Invoice
+from app.models.user import User
 from app.schemas.invoice import InvoiceCreate, InvoiceStatusUpdate, InvoiceUpdate
+
+FREE_PLAN_INVOICE_LIMIT = 3
 
 
 def _commit(db: Session) -> None:
@@ -58,6 +61,22 @@ def get_invoice(invoice_id: str, user_id: str, db: Session) -> Invoice:
 
 def create_invoice(user_id: str, data: InvoiceCreate, db: Session) -> Invoice:
     """Create a new invoice, verifying the client belongs to the user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if user and user.plan == "free":
+        active_count = (
+            db.query(Invoice)
+            .filter(
+                Invoice.user_id == user_id,
+                Invoice.status.in_(["pending", "overdue"]),
+            )
+            .count()
+        )
+        if active_count >= FREE_PLAN_INVOICE_LIMIT:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="free_plan_limit_reached",
+            )
+
     client = (
         db.query(Client)
         .filter(Client.id == data.client_id, Client.user_id == user_id)
