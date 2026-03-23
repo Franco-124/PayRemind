@@ -29,7 +29,8 @@
       "Bash(cmd /c \"C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend\\\\.venv\\\\Scripts\\\\python.exe --version\")",
       "Bash(powershell -Command \"& ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend\\\\.venv\\\\Scripts\\\\python.exe'' --version\")",
       "Bash(powershell -Command \":*)",
-      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend''; & ''.\\\\.venv\\\\Scripts\\\\python.exe'' test_email.py 2>&1\")"
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend''; & ''.\\\\.venv\\\\Scripts\\\\python.exe'' test_email.py 2>&1\")",
+      "Bash(powershell -Command \"Remove-Item ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend\\\\test_email.py''\")"
     ]
   }
 }

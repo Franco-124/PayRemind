@@ -12,7 +12,7 @@ from app.schemas.invoice import (
     InvoiceUpdate,
 )
 from app.services.auth_service import get_current_user
-from app.services import invoice_service, reminder_service
+from app.services import invoice_service
 
 router = APIRouter()
 
@@ -88,14 +88,62 @@ def toggle_reminders(
     "/{invoice_id}/test-reminder",
     response_model=dict,
     status_code=status.HTTP_200_OK,
-    summary="Test reminder (dev only)",
+    summary="Send reminder immediately",
 )
 def test_reminder(
     invoice_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Trigger reminder processing immediately — for testing without the cron job."""
-    invoice_service.get_invoice(invoice_id, current_user.id, db)  # verify ownership
-    reminder_service.process_pending_reminders(db)
-    return {"detail": "Reminder processing triggered"}
+    """Send a reminder email for this invoice immediately, bypassing interval checks."""
+    from datetime import date
+    from sqlalchemy.orm import joinedload
+    from app.models.invoice import Invoice
+    from app.services.reminder_service import get_tone_for_day, generate_email_content
+    from app.services.email_service import send_email
+    from app.models.email_log import EmailLog
+    from datetime import datetime, timezone
+
+    invoice = (
+        db.query(Invoice)
+        .options(joinedload(Invoice.client), joinedload(Invoice.user))
+        .filter(Invoice.id == invoice_id)
+        .first()
+    )
+    if not invoice or invoice.user_id != current_user.id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    today = date.today()
+    days_since_due = max((today - invoice.due_date).days, 0)
+    tone = get_tone_for_day(days_since_due)
+
+    subject, body = generate_email_content(
+        freelancer_name=current_user.full_name,
+        client_name=invoice.client.name,
+        amount=float(invoice.amount),
+        currency=invoice.currency,
+        invoice_number=invoice.invoice_number,
+        days_overdue=days_since_due,
+        tone=tone,
+    )
+
+    success = send_email(invoice.client.email, subject, body)
+
+    log = EmailLog(
+        invoice_id=invoice.id,
+        recipient_email=invoice.client.email,
+        reminder_day=days_since_due,
+        tone=tone,
+        status="sent" if success else "failed",
+        sent_at=datetime.now(timezone.utc),
+        error_message=None if success else "Email delivery failed",
+    )
+    db.add(log)
+    db.commit()
+
+    if not success:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=502, detail="Email delivery failed")
+
+    return {"detail": "Reminder sent", "to": invoice.client.email, "tone": tone}
