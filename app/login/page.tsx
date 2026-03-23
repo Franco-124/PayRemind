@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BellRing } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { useToastContext } from "@/app/components/ui/toast-provider";
+import { validateEmail, validatePassword } from "@/app/lib/validations";
 
 interface TokenResponse {
   access_token: string;
@@ -13,14 +15,21 @@ interface TokenResponse {
 
 export default function LoginPage() {
   const router = useRouter();
+  const toast = useToastContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    const emailErr = validateEmail(email);
+    const passErr = validatePassword(password);
+    if (emailErr || passErr) {
+      setErrors({ email: emailErr ?? undefined, password: passErr ?? undefined });
+      return;
+    }
+    setErrors({});
     setLoading(true);
     try {
       const data = await apiClient.postForm<TokenResponse>("/auth/login", {
@@ -28,9 +37,12 @@ export default function LoginPage() {
         password,
       });
       localStorage.setItem("access_token", data.access_token);
+      toast.success("¡Bienvenido!");
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Credenciales incorrectas");
+      const msg = err instanceof Error ? err.message : "";
+      toast.error("Email o contraseña incorrectos");
+      void msg;
     } finally {
       setLoading(false);
     }
@@ -52,13 +64,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Iniciar sesión</h2>
 
-          {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form noValidate onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -67,12 +73,12 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-100 transition ${errors.email ? "border-red-400 focus:border-red-400" : "border-gray-300 focus:border-indigo-500"}`}
                 placeholder="tu@email.com"
               />
+              {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
             </div>
 
             <div>
@@ -83,12 +89,12 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-100 transition ${errors.password ? "border-red-400 focus:border-red-400" : "border-gray-300 focus:border-indigo-500"}`}
                 placeholder="••••••••"
               />
+              {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
             </div>
 
             <button

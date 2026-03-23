@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
+import { useToastContext } from "@/app/components/ui/toast-provider";
+import { validateRequired, validateAmount } from "@/app/lib/validations";
 
 interface Client {
   id: string;
@@ -72,9 +74,7 @@ function nextReminderLabel(inv: Invoice): string {
   const due = new Date(inv.due_date + "T00:00:00");
   const daysSinceDue = Math.floor((today.getTime() - due.getTime()) / 86400000);
 
-  if (daysSinceDue < 0) {
-    return `Vence en ${Math.abs(daysSinceDue)} días`;
-  }
+  if (daysSinceDue < 0) return `Vence en ${Math.abs(daysSinceDue)} días`;
 
   const intervals = inv.reminder_config.intervals ?? [3, 7, 14];
   const next = intervals.find((d) => d > daysSinceDue);
@@ -86,18 +86,16 @@ function nextReminderLabel(inv: Invoice): string {
 }
 
 export default function InvoicesPage() {
+  const toast = useToastContext();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof CreateForm, string>>>({});
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
 
   const [detailInvoice, setDetailInvoice] = useState<InvoiceDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -106,18 +104,13 @@ export default function InvoicesPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
-  function flash(msg: string) {
-    setSuccess(msg);
-    setTimeout(() => setSuccess(""), 3000);
-  }
-
   async function fetchInvoices() {
     try {
       const url = statusFilter ? `/invoices/?invoice_status=${statusFilter}` : "/invoices/";
       const data = await apiClient.get<Invoice[]>(url);
       setInvoices(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar facturas");
+    } catch {
+      toast.error("Error al cargar facturas");
     } finally {
       setLoading(false);
     }
@@ -135,7 +128,30 @@ export default function InvoicesPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setFormError("");
+    const errs: Partial<Record<keyof CreateForm, string>> = {};
+    const clientErr = validateRequired(form.client_id, "cliente");
+    const numErr = validateRequired(form.invoice_number, "número de factura");
+    const amtErr = validateAmount(form.amount);
+    const dateErr = validateRequired(form.due_date, "vencimiento");
+    if (clientErr) errs.client_id = clientErr;
+    if (numErr) errs.invoice_number = numErr;
+    if (amtErr) errs.amount = amtErr;
+    if (dateErr) errs.due_date = dateErr;
+
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs);
+      return;
+    }
+    setFormErrors({});
+
+    // Warn if due date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(form.due_date + "T00:00:00");
+    if (due < today) {
+      toast.warning("La fecha de vencimiento ya pasó. Los recordatorios iniciarán inmediatamente.");
+    }
+
     setSaving(true);
     try {
       await apiClient.post("/invoices/", {
@@ -149,15 +165,15 @@ export default function InvoicesPage() {
       });
       setCreateOpen(false);
       setForm(EMPTY_FORM);
-      flash("Factura creada correctamente");
+      toast.success("Factura creada correctamente");
       fetchInvoices();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al crear factura";
+      const msg = err instanceof Error ? err.message : "";
       if (msg === "free_plan_limit_reached") {
         setCreateOpen(false);
         setUpgradeOpen(true);
       } else {
-        setFormError(msg);
+        toast.error("Error al crear la factura");
       }
     } finally {
       setSaving(false);
@@ -168,23 +184,27 @@ export default function InvoicesPage() {
     setActionId(id + ":paid");
     try {
       await apiClient.patch(`/invoices/${id}/status`, { status: "paid" });
-      flash("Factura marcada como pagada");
+      toast.success("Factura marcada como pagada ✓");
       fetchInvoices();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } catch {
+      toast.error("Error, intenta de nuevo");
     } finally {
       setActionId(null);
     }
   }
 
-  async function handleToggleReminder(id: string) {
+  async function handleToggleReminder(id: string, currentlyActive: boolean) {
     setActionId(id + ":toggle");
     try {
       await apiClient.patch(`/invoices/${id}/reminders/toggle`, {});
-      flash("Recordatorios actualizados");
+      if (currentlyActive) {
+        toast.warning("Recordatorios pausados");
+      } else {
+        toast.success("Recordatorios activados");
+      }
       fetchInvoices();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } catch {
+      toast.error("Error, intenta de nuevo");
     } finally {
       setActionId(null);
     }
@@ -195,8 +215,8 @@ export default function InvoicesPage() {
     try {
       const data = await apiClient.get<InvoiceDetail>(`/invoices/${id}`);
       setDetailInvoice(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar detalle");
+    } catch {
+      toast.error("Error al cargar detalle");
     } finally {
       setDetailLoading(false);
     }
@@ -206,15 +226,18 @@ export default function InvoicesPage() {
     setSendingReminder(true);
     try {
       await apiClient.post(`/invoices/${id}/test-reminder`, {});
-      flash("Recordatorio enviado");
+      toast.success("Recordatorio enviado");
       const updated = await apiClient.get<InvoiceDetail>(`/invoices/${id}`);
       setDetailInvoice(updated);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al enviar");
+    } catch {
+      toast.error("Error al enviar el recordatorio");
     } finally {
       setSendingReminder(false);
     }
   }
+
+  const inputCls = (err?: string) =>
+    `w-full rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-100 transition ${err ? "border-red-400 focus:border-red-400" : "border-gray-300 focus:border-indigo-500"}`;
 
   return (
     <div className="space-y-6">
@@ -228,7 +251,7 @@ export default function InvoicesPage() {
           </div>
         ) : (
           <button
-            onClick={() => { setCreateOpen(true); setFormError(""); }}
+            onClick={() => { setCreateOpen(true); setFormErrors({}); }}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
           >
             + Nueva factura
@@ -244,13 +267,6 @@ export default function InvoicesPage() {
           Marcá una factura como pagada para detenerlos.
         </span>
       </div>
-
-      {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
-      {success && (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">{success}</div>
-      )}
 
       {/* Filter */}
       <div className="flex gap-2 flex-wrap">
@@ -320,7 +336,7 @@ export default function InvoicesPage() {
                                 {isPaid ? "..." : "✓ Pagada"}
                               </button>
                               <button
-                                onClick={() => handleToggleReminder(inv.id)}
+                                onClick={() => handleToggleReminder(inv.id, inv.reminder_config.active)}
                                 disabled={!!actionId}
                                 className="text-gray-500 hover:text-gray-800 text-xs font-medium disabled:opacity-50 transition whitespace-nowrap"
                               >
@@ -345,117 +361,6 @@ export default function InvoicesPage() {
         )}
       </div>
 
-      {/* Create Modal */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Nueva factura</h2>
-
-            {formError && (
-              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                {formError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className={labelCls}>Cliente *</label>
-                <select
-                  required value={form.client_id}
-                  onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                  className={inputCls}
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Número de factura *</label>
-                  <input
-                    type="text" required value={form.invoice_number}
-                    onChange={(e) => setForm({ ...form, invoice_number: e.target.value })}
-                    className={inputCls} placeholder="INV-001"
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Moneda</label>
-                  <input
-                    type="text" maxLength={3} value={form.currency}
-                    onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
-                    className={inputCls} placeholder="USD"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Monto *</label>
-                  <input
-                    type="number" required min="0.01" step="0.01" value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                    className={inputCls} placeholder="1500.00"
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Vencimiento *</label>
-                  <input
-                    type="date" required value={form.due_date}
-                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={labelCls}>Descripción</label>
-                <textarea
-                  rows={2} value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className={inputCls} placeholder="Opcional"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 py-1">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, reminder_active: !form.reminder_active })}
-                  className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${
-                    form.reminder_active ? "bg-indigo-600" : "bg-gray-300"
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${
-                    form.reminder_active ? "translate-x-4" : "translate-x-0.5"
-                  }`} />
-                </button>
-                <span className="text-sm text-gray-700">
-                  Recordatorios automáticos <span className="text-gray-400">(días 3, 7 y 14)</span>
-                </span>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); }}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit" disabled={saving}
-                  className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition"
-                >
-                  {saving ? "Creando..." : "Crear factura"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Upgrade Modal */}
       {upgradeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -463,9 +368,7 @@ export default function InvoicesPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
               <span className="text-2xl">🚀</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Límite del plan Free alcanzado
-            </h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Límite del plan Free alcanzado</h2>
             <p className="text-sm text-gray-500 mb-6">
               El plan gratuito permite hasta <strong>3 facturas activas</strong>. Actualizá al plan Pro para crear facturas ilimitadas con recordatorios automáticos.
             </p>
@@ -500,6 +403,124 @@ export default function InvoicesPage() {
         </div>
       )}
 
+      {/* Create Modal */}
+      {createOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Nueva factura</h2>
+
+            <form noValidate onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+                <select
+                  value={form.client_id}
+                  onChange={(e) => { setForm({ ...form, client_id: e.target.value }); setFormErrors((p) => ({ ...p, client_id: undefined })); }}
+                  className={inputCls(formErrors.client_id)}
+                >
+                  <option value="">Seleccionar cliente</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                {formErrors.client_id && <p className="mt-1 text-xs text-red-600">{formErrors.client_id}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de factura *</label>
+                  <input
+                    type="text"
+                    value={form.invoice_number}
+                    onChange={(e) => { setForm({ ...form, invoice_number: e.target.value }); setFormErrors((p) => ({ ...p, invoice_number: undefined })); }}
+                    className={inputCls(formErrors.invoice_number)}
+                    placeholder="INV-001"
+                  />
+                  {formErrors.invoice_number && <p className="mt-1 text-xs text-red-600">{formErrors.invoice_number}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                  <input
+                    type="text"
+                    maxLength={3}
+                    value={form.currency}
+                    onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
+                    className={inputCls()}
+                    placeholder="USD"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Monto *</label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={form.amount}
+                    onChange={(e) => { setForm({ ...form, amount: e.target.value }); setFormErrors((p) => ({ ...p, amount: undefined })); }}
+                    className={inputCls(formErrors.amount)}
+                    placeholder="1500.00"
+                  />
+                  {formErrors.amount && <p className="mt-1 text-xs text-red-600">{formErrors.amount}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vencimiento *</label>
+                  <input
+                    type="date"
+                    value={form.due_date}
+                    onChange={(e) => { setForm({ ...form, due_date: e.target.value }); setFormErrors((p) => ({ ...p, due_date: undefined })); }}
+                    className={inputCls(formErrors.due_date)}
+                  />
+                  {formErrors.due_date && <p className="mt-1 text-xs text-red-600">{formErrors.due_date}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea
+                  rows={2}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className={inputCls()}
+                  placeholder="Opcional"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 py-1">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, reminder_active: !form.reminder_active })}
+                  className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${form.reminder_active ? "bg-indigo-600" : "bg-gray-300"}`}
+                >
+                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${form.reminder_active ? "translate-x-4" : "translate-x-0.5"}`} />
+                </button>
+                <span className="text-sm text-gray-700">
+                  Recordatorios automáticos <span className="text-gray-400">(días 3, 7 y 14)</span>
+                </span>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); }}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition"
+                >
+                  {saving ? "Creando..." : "Crear factura"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Detail Modal */}
       {(detailInvoice || detailLoading) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -508,12 +529,9 @@ export default function InvoicesPage() {
               <p className="text-sm text-gray-400 text-center py-8">Cargando...</p>
             ) : detailInvoice ? (
               <>
-                {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Factura {detailInvoice.invoice_number}
-                    </h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Factura {detailInvoice.invoice_number}</h2>
                     <p className="text-sm text-gray-500">{detailInvoice.client.name}</p>
                   </div>
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[detailInvoice.status]}`}>
@@ -521,36 +539,25 @@ export default function InvoicesPage() {
                   </span>
                 </div>
 
-                {/* Summary */}
                 <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
-                  <Dt label="Monto">
-                    {detailInvoice.currency} {Number(detailInvoice.amount).toLocaleString("es")}
-                  </Dt>
+                  <Dt label="Monto">{detailInvoice.currency} {Number(detailInvoice.amount).toLocaleString("es")}</Dt>
                   <Dt label="Vencimiento">{detailInvoice.due_date}</Dt>
                   <Dt label="Días vencida">
                     {(() => {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
+                      const today = new Date(); today.setHours(0, 0, 0, 0);
                       const due = new Date(detailInvoice.due_date + "T00:00:00");
                       const days = Math.floor((today.getTime() - due.getTime()) / 86400000);
                       return days < 0 ? `Vence en ${Math.abs(days)} días` : `${days} días`;
                     })()}
                   </Dt>
                   <Dt label="Recordatorios">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                      detailInvoice.reminder_config.active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
-                    }`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${detailInvoice.reminder_config.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                       {detailInvoice.reminder_config.active ? "▶ Activos" : "⏸ Pausados"}
                     </span>
                   </Dt>
-                  {detailInvoice.description && (
-                    <Dt label="Descripción" full>{detailInvoice.description}</Dt>
-                  )}
+                  {detailInvoice.description && <Dt label="Descripción" full>{detailInvoice.description}</Dt>}
                 </dl>
 
-                {/* Send now button */}
                 {(detailInvoice.status === "pending" || detailInvoice.status === "overdue") && (
                   <button
                     onClick={() => handleSendNow(detailInvoice.id)}
@@ -561,7 +568,6 @@ export default function InvoicesPage() {
                   </button>
                 )}
 
-                {/* Email history */}
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Historial de emails</h3>
                 {!detailInvoice.email_logs || detailInvoice.email_logs.length === 0 ? (
                   <p className="text-sm text-gray-400">No se han enviado emails aún.</p>
@@ -573,24 +579,14 @@ export default function InvoicesPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-900">Día {log.reminder_day}</span>
                             <span className="text-xs text-gray-400">·</span>
-                            <span className="text-xs text-gray-500">
-                              {TONE_LABEL[log.tone] ?? log.tone}
-                            </span>
+                            <span className="text-xs text-gray-500">{TONE_LABEL[log.tone] ?? log.tone}</span>
                           </div>
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            log.status === "sent" ? "bg-green-100 text-green-700" :
-                            log.status === "opened" ? "bg-blue-100 text-blue-700" :
-                            "bg-red-100 text-red-700"
-                          }`}>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${log.status === "sent" ? "bg-green-100 text-green-700" : log.status === "opened" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}`}>
                             {log.status === "sent" ? "Enviado" : log.status === "opened" ? "Abierto" : "Fallido"}
                           </span>
                         </div>
-                        <p className="text-gray-400 text-xs mt-1">
-                          {new Date(log.sent_at).toLocaleString("es")}
-                        </p>
-                        {log.error_message && (
-                          <p className="text-red-600 text-xs mt-1">{log.error_message}</p>
-                        )}
+                        <p className="text-gray-400 text-xs mt-1">{new Date(log.sent_at).toLocaleString("es")}</p>
+                        {log.error_message && <p className="text-red-600 text-xs mt-1">{log.error_message}</p>}
                       </div>
                     ))}
                   </div>
@@ -610,10 +606,6 @@ export default function InvoicesPage() {
     </div>
   );
 }
-
-const inputCls =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition";
-const labelCls = "block text-sm font-medium text-gray-700 mb-1";
 
 function Dt({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
   return (
