@@ -37,12 +37,15 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations against a live DB connection."""
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = get_url()
+    raw_url = os.environ.get("DATABASE_URL", "")
 
-    db_url = os.environ["DATABASE_URL"].replace(
-        "postgresql://", "postgresql+psycopg://"
-    )
+    if raw_url.startswith("postgresql://"):
+        db_url = raw_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    elif raw_url.startswith("postgres://"):
+        db_url = raw_url.replace("postgres://", "postgresql+psycopg://", 1)
+    else:
+        db_url = raw_url
+
     connectable = create_engine(db_url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
