@@ -39,7 +39,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     : "??";
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <>
+    <div className="md:hidden flex items-center justify-center min-h-screen bg-gray-50 p-8 text-center">
+      <div>
+        <p className="text-2xl mb-4">💻</p>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          PayRemind works best on desktop
+        </h2>
+        <p className="text-sm text-gray-500">
+          Please open PayRemind on your computer for the best experience.
+        </p>
+      </div>
+    </div>
+    <div className="hidden md:flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <aside className="w-60 bg-gray-900 flex flex-col shrink-0">
         {/* Logo */}
@@ -99,5 +111,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
+    </>
   );
 }
