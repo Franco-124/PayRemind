@@ -5,7 +5,18 @@
       "Bash(psql postgresql://franco:2122@localhost:5432/payremind -c \"\\\\dt\")",
       "Bash(DATABASE_URL=postgresql://franco:2122@localhost:5432/payremind .venv/Scripts/python.exe -c \":*)",
       "Bash(.venv/Scripts/pip.exe install:*)",
-      "Bash(.venv/Scripts/python.exe -c \":*)"
+      "Bash(.venv/Scripts/python.exe -c \":*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(test -d \"c:/Users/Usuario/Documents/PayRemind/frontend/app/\\(dashboard\\)/settings\")",
+      "Bash(netstat -ano)",
+      "Read(//c/Temp/**)",
+      "Bash(powershell.exe -Command \"Get-Content ''C:\\\\Temp\\\\uvicorn_err.log'' -ErrorAction SilentlyContinue; Get-Content ''C:\\\\Temp\\\\uvicorn.log'' -ErrorAction SilentlyContinue\")",
+      "Bash(powershell.exe -Command \":*)",
+      "Bash(.venv/Scripts/python.exe -c \"from app.config import settings; print\\(''config OK''\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"from app.database import get_db; print\\(''db OK''\\)\")",
+      "Bash(curl -s -X POST http://localhost:8002/auth/login -H \"Content-Type: application/x-www-form-urlencoded\" -d \"username=johan.franco@nousware.ai&password=2122\")"
     ]
   }
 }
