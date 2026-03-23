@@ -1,7 +1,10 @@
+import logging
 from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session, joinedload
+
+logger = logging.getLogger(__name__)
 
 from app.config import settings
 from app.models.email_log import EmailLog
@@ -72,7 +75,7 @@ def generate_email_content(
             "- Firma con el nombre del freelancer"
         )
 
-        print(f"[reminder_service] Generating email for invoice {invoice_number}, tone: {tone}")
+        logger.info("Generating email for invoice %s, tone: %s", invoice_number, tone)
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -85,11 +88,11 @@ def generate_email_content(
 
         text = response.choices[0].message.content or ""
         subject, body = _parse_email_response(text, fallback_subject, fallback_body)
-        print(f"[reminder_service] Email generated - subject: {subject}")
+        logger.info("Email generated - subject: %s", subject)
         return subject, body
 
     except Exception as e:
-        print(f"[reminder_service] OpenAI error: {e} — using fallback email")
+        logger.info("OpenAI error: %s — using fallback email", e)
         return fallback_subject, fallback_body
 
 
@@ -147,7 +150,7 @@ def process_pending_reminders(db: Session) -> None:
     )
     for invoice in overdue_updated:
         invoice.status = "overdue"
-        print(f"[reminder_service] marked overdue: invoice {invoice.id}")
+        logger.info("marked overdue: invoice %s", invoice.id)
     if overdue_updated:
         db.commit()
 
@@ -170,9 +173,9 @@ def process_pending_reminders(db: Session) -> None:
             continue
 
         if already_sent(invoice.id, days_since_due, db):
-            print(
-                f"[reminder_service] skipped (already sent): "
-                f"invoice {invoice.invoice_number} day {days_since_due}"
+            logger.info(
+                "skipped (already sent): invoice %s day %s",
+                invoice.invoice_number, days_since_due,
             )
             continue
 
@@ -187,7 +190,7 @@ def process_pending_reminders(db: Session) -> None:
             tone=tone,
         )
 
-        print(f"[reminder_service] Sending email to: {invoice.client.email}")
+        logger.info("Sending email to: %s", invoice.client.email)
         success = send_email(invoice.client.email, subject, body)
 
         log = EmailLog(
@@ -202,8 +205,9 @@ def process_pending_reminders(db: Session) -> None:
         db.add(log)
         db.commit()
 
-        print(
-            f"[reminder_service] {'sent' if success else 'FAILED'}: "
-            f"invoice {invoice.invoice_number} -> {invoice.client.email} "
-            f"(day {days_since_due}, tone={tone})"
+        logger.info(
+            "%s: invoice %s -> %s (day %s, tone=%s)",
+            "sent" if success else "FAILED",
+            invoice.invoice_number, invoice.client.email,
+            days_since_due, tone,
         )

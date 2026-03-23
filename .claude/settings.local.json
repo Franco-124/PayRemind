@@ -21,7 +21,9 @@
       "Bash(cp -r frontend/components .)",
       "Bash(cp -r frontend/lib .)",
       "Bash(cp -r frontend/public .)",
-      "Bash(cp frontend/package.json .)"
+      "Bash(cp frontend/package.json .)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/typescript/bin/tsc --noEmit)"
     ]
   }
 }

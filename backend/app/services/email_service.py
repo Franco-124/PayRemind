@@ -1,6 +1,10 @@
+import logging
+
 import resend
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def send_email(to: str, subject: str, body: str) -> bool:
@@ -10,8 +14,8 @@ def send_email(to: str, subject: str, body: str) -> bool:
     Never raises — a failed email must not break the caller's flow.
     """
     try:
-        print(f"[email_service] Attempting to send email to {to}")
-        print(f"[email_service] Resend API key exists: {bool(settings.resend_api_key)}")
+        logger.info("Attempting to send email to %s", to)
+        logger.info("Resend API key exists: %s", bool(settings.resend_api_key))
         resend.api_key = settings.resend_api_key
         response = resend.Emails.send({
             "from": "PayRemind <onboarding@resend.dev>",
@@ -19,10 +23,10 @@ def send_email(to: str, subject: str, body: str) -> bool:
             "subject": subject,
             "html": body.replace("\n", "<br>"),
         })
-        print(f"[email_service] Resend response: {response}")
-        print(f"[email_service] sent -> {to} | {subject}")
+        logger.info("Resend response: %s", response)
+        logger.info("sent -> %s | %s", to, subject)
         return True
     except Exception as e:
-        print(f"[email_service] Email error: {str(e)}")
-        print(f"[email_service] FAILED -> {to} | {subject}")
+        logger.error("Email error: %s", str(e))
+        logger.error("FAILED -> %s | %s", to, subject)
         return False

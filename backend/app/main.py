@@ -1,3 +1,6 @@
+import logging
+import sys
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,6 +9,14 @@ from app.routers import auth as auth_router
 from app.routers import clients as clients_router
 from app.routers import invoices as invoices_router
 from app.routers import webhooks as webhooks_router
+
+# Force stdout to flush immediately — required for Railway log streaming
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    force=True,
+)
 
 app = FastAPI(title="PayRemind API")
 
