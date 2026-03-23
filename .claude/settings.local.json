@@ -16,7 +16,12 @@
       "Bash(powershell.exe -Command \":*)",
       "Bash(.venv/Scripts/python.exe -c \"from app.config import settings; print\\(''config OK''\\)\")",
       "Bash(.venv/Scripts/python.exe -c \"from app.database import get_db; print\\(''db OK''\\)\")",
-      "Bash(curl -s -X POST http://localhost:8002/auth/login -H \"Content-Type: application/x-www-form-urlencoded\" -d \"username=johan.franco@nousware.ai&password=2122\")"
+      "Bash(curl -s -X POST http://localhost:8002/auth/login -H \"Content-Type: application/x-www-form-urlencoded\" -d \"username=johan.franco@nousware.ai&password=2122\")",
+      "Bash(cp -r frontend/app .)",
+      "Bash(cp -r frontend/components .)",
+      "Bash(cp -r frontend/lib .)",
+      "Bash(cp -r frontend/public .)",
+      "Bash(cp frontend/package.json .)"
     ]
   }
 }

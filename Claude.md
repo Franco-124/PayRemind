@@ -1,7 +1,6 @@
 # CLAUDE.md — PayRemind
 
 Este archivo le da contexto a Claude Code sobre el proyecto.
-Colócalo en la raíz del monorepo (`payremind/CLAUDE.md`).
 
 ## Qué es este proyecto
 SaaS para freelancers que gestiona facturas pendientes y envía
@@ -12,9 +11,29 @@ según los días vencidos.
 - **Backend:** FastAPI (Python 3.11), SQLAlchemy 2.0, APScheduler, PostgreSQL
 - **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui
 - **Email:** Resend API
-- **AI:** Anthropic Claude API (generación de emails)
+- **AI:** OpenAI API (generación de emails)
 - **Billing:** Lemon Squeezy
 - **Deploy:** Backend → Railway | Frontend → Vercel
+
+## Estructura del monorepo
+```
+payremind/
+├── app/          # Next.js App Router — frontend (raíz del repo → Vercel)
+├── components/   # Componentes React reutilizables
+├── lib/          # Utilidades y API client del frontend
+├── public/       # Assets estáticos
+├── package.json  # Dependencias del frontend
+├── backend/      # FastAPI app → Railway
+│   ├── app/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── routers/
+│   │   ├── services/
+│   │   └── scheduler/
+│   ├── alembic/
+│   └── requirements.txt
+└── CLAUDE.md
+```
 
 ## Principios de código
 - **Single Responsibility:** cada archivo tiene una sola razón para cambiar
@@ -24,7 +43,7 @@ según los días vencidos.
 
 ## Estructura backend
 ```
-app/
+backend/app/
 ├── models/      # SQLAlchemy ORM models — solo estructura de datos
 ├── schemas/     # Pydantic schemas — validación request/response
 ├── routers/     # FastAPI routers — HTTP layer, sin lógica de negocio
