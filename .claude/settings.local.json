@@ -23,7 +23,13 @@
       "Bash(cp -r frontend/public .)",
       "Bash(cp frontend/package.json .)",
       "Bash(node_modules/.bin/tsc --noEmit)",
-      "Bash(node_modules/typescript/bin/tsc --noEmit)"
+      "Bash(node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(cmd /c \".venv\\\\Scripts\\\\python.exe -c \"\"import sys; print\\(sys.executable\\)\"\"\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend && .venv\\\\Scripts\\\\python.exe --version 2>&1\")",
+      "Bash(cmd /c \"C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend\\\\.venv\\\\Scripts\\\\python.exe --version\")",
+      "Bash(powershell -Command \"& ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend\\\\.venv\\\\Scripts\\\\python.exe'' --version\")",
+      "Bash(powershell -Command \":*)",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend''; & ''.\\\\.venv\\\\Scripts\\\\python.exe'' test_email.py 2>&1\")"
     ]
   }
 }

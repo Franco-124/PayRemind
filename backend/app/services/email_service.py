@@ -18,7 +18,7 @@ def send_email(to: str, subject: str, body: str) -> bool:
         logger.info("Resend API key exists: %s", bool(settings.resend_api_key))
         resend.api_key = settings.resend_api_key
         response = resend.Emails.send({
-            "from": "PayRemind <onboarding@resend.dev>",
+            "from": "PayRemind <noreply@revoluciona.online>",
             "to": [to],
             "subject": subject,
             "html": body.replace("\n", "<br>"),
