@@ -298,6 +298,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-6 text-sm text-gray-400">
             <Link href="/login" className="hover:text-white transition">Login</Link>
             <Link href="/register" className="hover:text-white transition">Register</Link>
+            <Link href="/terms" className="hover:text-white transition">Terms of Service</Link>
+            <Link href="/refunds" className="hover:text-white transition">Refund Policy</Link>
             <span>{t.footer.rights}</span>
           </div>
         </div>
