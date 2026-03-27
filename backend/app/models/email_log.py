@@ -27,6 +27,8 @@ class EmailLog(Base):
     sent_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    subject: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     invoice: Mapped["Invoice"] = relationship(  # noqa: F821

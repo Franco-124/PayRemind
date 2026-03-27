@@ -14,4 +14,6 @@ class EmailLogResponse(BaseModel):
     tone: str
     status: str
     sent_at: datetime
+    subject: Optional[str] = None
+    body: Optional[str] = None
     error_message: Optional[str]

@@ -200,6 +200,8 @@ def process_pending_reminders(db: Session) -> None:
             tone=tone,
             status="sent" if success else "failed",
             sent_at=datetime.now(timezone.utc),
+            subject=subject,
+            body=body,
             error_message=None if success else "Email delivery failed",
         )
         db.add(log)
