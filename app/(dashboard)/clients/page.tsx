@@ -63,22 +63,22 @@ function EmailConfigSection({
   setOpen: (v: boolean) => void;
 }) {
   return (
-    <div className="border-t border-gray-200 pt-4 mt-2">
+    <div className="border-t border-gray-200 dark:border-slate-600 pt-4 mt-2">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 w-full text-left text-sm font-semibold text-gray-900 mb-1"
+        className="flex items-center gap-2 w-full text-left text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1"
       >
-        <Mail className="w-4 h-4 text-indigo-600" />
+        <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
         Configuración de emails
         {open
-          ? <ChevronUp className="w-4 h-4 text-gray-400 ml-auto" />
-          : <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+          ? <ChevronUp className="w-4 h-4 text-gray-400 dark:text-slate-500 ml-auto" />
+          : <ChevronDown className="w-4 h-4 text-gray-400 dark:text-slate-500 ml-auto" />
         }
       </button>
 
       {!open && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-400 dark:text-slate-500">
           Personaliza el idioma, tono y estilo de los emails enviados a este cliente.
         </p>
       )}
@@ -87,7 +87,7 @@ function EmailConfigSection({
         <div className="space-y-3 mt-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Idioma</label>
               <select
                 value={form.email_language}
                 onChange={(e) => setForm({ ...form, email_language: e.target.value })}
@@ -98,7 +98,7 @@ function EmailConfigSection({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tono base</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tono base</label>
               <select
                 value={form.email_tone}
                 onChange={(e) => setForm({ ...form, email_tone: e.target.value })}
@@ -113,7 +113,7 @@ function EmailConfigSection({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tratamiento</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tratamiento</label>
               <select
                 value={form.email_treatment}
                 onChange={(e) => setForm({ ...form, email_treatment: e.target.value })}
@@ -125,7 +125,7 @@ function EmailConfigSection({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del remitente</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nombre del remitente</label>
               <input
                 type="text"
                 value={form.sender_name}
@@ -137,7 +137,7 @@ function EmailConfigSection({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
               Instrucciones para la IA
             </label>
             <textarea
@@ -148,7 +148,7 @@ function EmailConfigSection({
               maxLength={500}
               placeholder="Ej: Menciona siempre que el proyecto fue completado con éxito. No uses palabras como 'urgente'."
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
               Máximo 500 caracteres. Se aplica a todos los emails enviados a este cliente.
             </p>
           </div>
@@ -291,15 +291,15 @@ export default function ClientsPage() {
   }
 
   const inputCls = (err?: string) =>
-    `w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${err ? "border-red-400 focus:border-red-400 focus:ring-red-200" : "border-gray-300"}`;
+    `w-full rounded-lg border bg-white dark:bg-slate-700 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${err ? "border-red-400 focus:border-red-400 focus:ring-red-200" : "border-gray-300 dark:border-slate-600"}`;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-sm text-gray-500 mt-1">Gestiona los contactos a quienes facturás</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Clientes</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Gestiona los contactos a quienes facturás</p>
         </div>
         <button
           onClick={() => { setCreateOpen(true); setCreateErrors({}); setCreateEmailConfigOpen(false); }}
@@ -310,16 +310,16 @@ export default function ClientsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="px-6 py-12 text-sm text-gray-400 text-center">Cargando...</div>
+          <div className="px-6 py-12 text-sm text-gray-400 dark:text-slate-500 text-center">Cargando...</div>
         ) : clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Users className="w-5 h-5 text-gray-400" />
+            <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+              <Users className="w-5 h-5 text-gray-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Sin clientes aún</h3>
-            <p className="text-sm text-gray-500 max-w-sm">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">Sin clientes aún</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm">
               Creá tu primer cliente para poder emitir facturas y enviar recordatorios.
             </p>
           </div>
@@ -327,42 +327,42 @@ export default function ClientsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
                   {["Nombre", "Email", "Empresa", "Creado", "Acciones"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                 {clients.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold select-none">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-semibold select-none">
                           {getInitials(c.name)}
                         </div>
-                        <span className="font-medium text-gray-900">{c.name}</span>
+                        <span className="font-medium text-gray-900 dark:text-slate-100">{c.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{c.email}</td>
-                    <td className="px-6 py-4 text-gray-500">{c.company ?? "—"}</td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-6 py-4 text-gray-600 dark:text-slate-400">{c.email}</td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{c.company ?? "—"}</td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
                       {new Date(c.created_at).toLocaleDateString("es")}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => openEdit(c)}
-                          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150"
+                          className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150"
                         >
                           Editar
                         </button>
                         <button
                           onClick={() => handleDelete(c.id, c.name)}
                           disabled={deletingId === c.id}
-                          className="inline-flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150 disabled:opacity-50"
+                          className="inline-flex items-center text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150 disabled:opacity-50"
                         >
                           {deletingId === c.id ? "Eliminando..." : "Eliminar"}
                         </button>
@@ -379,18 +379,18 @@ export default function ClientsPage() {
       {/* Confirm Delete Modal */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/30">
               <span className="text-xl">🗑️</span>
             </div>
-            <h2 className="text-base font-semibold text-gray-900 mb-1">¿Eliminar cliente?</h2>
-            <p className="text-sm text-gray-500 mb-6">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">¿Eliminar cliente?</h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
               Vas a eliminar a <strong>{confirmDelete.name}</strong>. Esta acción no se puede deshacer.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 inline-flex justify-center items-center bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 shadow-sm transition-all duration-150"
+                className="flex-1 inline-flex justify-center items-center bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
               >
                 Cancelar
               </button>
@@ -408,12 +408,12 @@ export default function ClientsPage() {
       {/* Create Modal */}
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Nuevo cliente</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Nuevo cliente</h2>
               <button
                 onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_FORM); setCreateErrors({}); }}
-                className="text-gray-400 hover:text-gray-600 transition text-xl leading-none"
+                className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition text-xl leading-none"
               >
                 ×
               </button>
@@ -421,7 +421,7 @@ export default function ClientsPage() {
 
             <form noValidate onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Nombre *</label>
                 <input
                   type="text"
                   value={createForm.name}
@@ -429,11 +429,11 @@ export default function ClientsPage() {
                   className={inputCls(createErrors.name)}
                   placeholder="Empresa ABC"
                 />
-                {createErrors.name && <p className="mt-1 text-xs text-red-600">{createErrors.name}</p>}
+                {createErrors.name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{createErrors.name}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Email *</label>
                 <input
                   type="email"
                   value={createForm.email}
@@ -441,11 +441,11 @@ export default function ClientsPage() {
                   className={inputCls(createErrors.email)}
                   placeholder="contacto@empresa.com"
                 />
-                {createErrors.email && <p className="mt-1 text-xs text-red-600">{createErrors.email}</p>}
+                {createErrors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{createErrors.email}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Empresa</label>
                 <input
                   type="text"
                   value={createForm.company}
@@ -456,7 +456,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Notas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Notas</label>
                 <textarea
                   rows={2}
                   value={createForm.notes}
@@ -478,7 +478,7 @@ export default function ClientsPage() {
                 <button
                   type="button"
                   onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_FORM); setCreateErrors({}); }}
-                  className="flex-1 inline-flex justify-center items-center bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 shadow-sm transition-all duration-150"
+                  className="flex-1 inline-flex justify-center items-center bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
                 >
                   Cancelar
                 </button>
@@ -498,12 +498,12 @@ export default function ClientsPage() {
       {/* Edit Modal */}
       {editClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Editar cliente</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Editar cliente</h2>
               <button
                 onClick={() => setEditClient(null)}
-                className="text-gray-400 hover:text-gray-600 transition text-xl leading-none"
+                className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition text-xl leading-none"
               >
                 ×
               </button>
@@ -511,29 +511,29 @@ export default function ClientsPage() {
 
             <form noValidate onSubmit={handleUpdate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Nombre *</label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => { setEditForm({ ...editForm, name: e.target.value }); setEditErrors((p) => ({ ...p, name: undefined })); }}
                   className={inputCls(editErrors.name)}
                 />
-                {editErrors.name && <p className="mt-1 text-xs text-red-600">{editErrors.name}</p>}
+                {editErrors.name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editErrors.name}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Email *</label>
                 <input
                   type="email"
                   value={editForm.email}
                   onChange={(e) => { setEditForm({ ...editForm, email: e.target.value }); setEditErrors((p) => ({ ...p, email: undefined })); }}
                   className={inputCls(editErrors.email)}
                 />
-                {editErrors.email && <p className="mt-1 text-xs text-red-600">{editErrors.email}</p>}
+                {editErrors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editErrors.email}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Empresa</label>
                 <input
                   type="text"
                   value={editForm.company}
@@ -543,7 +543,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Notas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Notas</label>
                 <textarea
                   rows={2}
                   value={editForm.notes}
@@ -564,7 +564,7 @@ export default function ClientsPage() {
                 <button
                   type="button"
                   onClick={() => setEditClient(null)}
-                  className="flex-1 inline-flex justify-center items-center bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 shadow-sm transition-all duration-150"
+                  className="flex-1 inline-flex justify-center items-center bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
                 >
                   Cancelar
                 </button>

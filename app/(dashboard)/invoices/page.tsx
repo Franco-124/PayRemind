@@ -54,10 +54,10 @@ const STATUS_LABEL: Record<string, string> = {
   pending: "Pendiente", overdue: "Vencida", paid: "Pagada", cancelled: "Cancelada",
 };
 const STATUS_COLOR: Record<string, string> = {
-  pending:   "bg-yellow-50 text-yellow-700 border border-yellow-200",
-  overdue:   "bg-red-50 text-red-700 border border-red-200",
-  paid:      "bg-green-50 text-green-700 border border-green-200",
-  cancelled: "bg-gray-100 text-gray-600 border border-gray-200",
+  pending:   "bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
+  overdue:   "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
+  paid:      "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
+  cancelled: "bg-gray-100 text-gray-600 border border-gray-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600",
 };
 const TONE_LABEL: Record<string, string> = {
   friendly: "Amable", firm: "Firme", final: "Final",
@@ -182,7 +182,6 @@ export default function InvoicesPage() {
     }
     setFormErrors({});
 
-    // Warn if due date is in the past — only for Pro users with reminders active
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = new Date(form.due_date + "T00:00:00");
@@ -299,20 +298,20 @@ export default function InvoicesPage() {
   }
 
   const inputCls = (err?: string) =>
-    `w-full rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-100 transition ${err ? "border-red-400 focus:border-red-400" : "border-gray-300 focus:border-indigo-500"}`;
+    `w-full rounded-lg border px-3 py-2 text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-100 transition ${err ? "border-red-400 focus:border-red-400" : "border-gray-300 dark:border-slate-600 focus:border-indigo-500"}`;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Facturas</h1>
-          <p className="text-sm text-gray-500 mt-1">Seguimiento de cobros y recordatorios automáticos</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Facturas</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Seguimiento de cobros y recordatorios automáticos</p>
         </div>
         {clients.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
+          <div className="flex items-center gap-2 rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-400">
             <span>⚠️</span>
-            <span>Primero debés <a href="/clients" className="font-semibold underline hover:text-yellow-900">registrar un cliente</a> para crear facturas.</span>
+            <span>Primero debés <a href="/clients" className="font-semibold underline hover:text-yellow-900 dark:hover:text-yellow-300">registrar un cliente</a> para crear facturas.</span>
           </div>
         ) : (
           <button
@@ -325,7 +324,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Info banner */}
-      <div className="flex items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+      <div className="flex items-start gap-3 rounded-lg border border-indigo-100 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
         <span className="mt-0.5 shrink-0">ℹ️</span>
         <span>
           Los recordatorios se envían automáticamente a las <strong>9:00 AM UTC</strong> en los días <strong>3, 7 y 14</strong> después del vencimiento.
@@ -342,7 +341,7 @@ export default function InvoicesPage() {
             className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
               statusFilter === s
                 ? "bg-indigo-600 text-white"
-                : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                : "bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700"
             }`}
           >
             {s === "" ? "Todos" : STATUS_LABEL[s]}
@@ -351,24 +350,24 @@ export default function InvoicesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="px-6 py-10 text-sm text-gray-400 text-center">Cargando...</div>
+          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">Cargando...</div>
         ) : invoices.length === 0 ? (
-          <div className="px-6 py-10 text-sm text-gray-400 text-center">No hay facturas para este filtro.</div>
+          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">No hay facturas para este filtro.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
                   {["#", "Cliente", "Monto", "Vencimiento", "Estado", "Recordatorios", "Acciones"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                 {invoices.map((inv) => {
                   const isActive = inv.status === "pending" || inv.status === "overdue";
                   const isMarkingPaid = actionId === inv.id + ":paid";
@@ -383,13 +382,13 @@ export default function InvoicesPage() {
                   const daysUntilNext = nextInterval !== undefined ? nextInterval - daysSinceDue : null;
 
                   return (
-                    <tr key={inv.id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 font-mono text-gray-700 whitespace-nowrap">{inv.invoice_number}</td>
-                      <td className="px-4 py-3 text-gray-900">{inv.client.name}</td>
-                      <td className="px-4 py-3 text-gray-900 whitespace-nowrap">
+                    <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
+                      <td className="px-4 py-3 font-mono text-gray-700 dark:text-slate-300 whitespace-nowrap">{inv.invoice_number}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-slate-100">{inv.client.name}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-slate-100 whitespace-nowrap">
                         {inv.currency} {Number(inv.amount).toLocaleString("es")}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{inv.due_date}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">{inv.due_date}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[inv.status]}`}>
                           {STATUS_LABEL[inv.status]}
@@ -399,43 +398,43 @@ export default function InvoicesPage() {
                       {/* Recordatorios column */}
                       <td className="px-4 py-3">
                         {inv.status === "paid" || inv.status === "cancelled" ? (
-                          <span className="text-xs text-gray-400">—</span>
+                          <span className="text-xs text-gray-400 dark:text-slate-500">—</span>
                         ) : userPlan === "free" ? (
                           <div className="flex flex-col gap-0.5">
-                            <a href="/settings" className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition-colors">
+                            <a href="/settings" className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                               <Lock className="w-3 h-3" />
                               Solo Plan Pro
                             </a>
-                            <span className="text-xs text-gray-400">Envía manualmente</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">Envía manualmente</span>
                           </div>
                         ) : !inv.reminder_config.active ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="inline-flex items-center gap-1 text-xs text-yellow-600 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400 font-medium">
                               <PauseCircle className="w-3 h-3" />
                               Pausado
                             </span>
-                            <span className="text-xs text-gray-400">Envía manualmente cuando quieras</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">Envía manualmente cuando quieras</span>
                           </div>
                         ) : daysSinceDue < 0 ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
                               <CheckCircle className="w-3 h-3" />
                               Automático activo
                             </span>
-                            <span className="text-xs text-gray-400">Inicia el día 3 tras vencer</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">Inicia el día 3 tras vencer</span>
                           </div>
                         ) : nextInterval !== undefined ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="inline-flex items-center gap-1 text-xs text-indigo-600 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 font-medium">
                               <Clock className="w-3 h-3" />
                               Próximo: Día {nextInterval}
                             </span>
-                            <span className="text-xs text-gray-400">en {daysUntilNext} día{daysUntilNext === 1 ? "" : "s"}</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">en {daysUntilNext} día{daysUntilNext === 1 ? "" : "s"}</span>
                           </div>
                         ) : (
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-xs text-gray-500 font-medium">Ciclo completado</span>
-                            <span className="text-xs text-gray-400">Emails enviados: {intervals.length}/{intervals.length}</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400 font-medium">Ciclo completado</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">Emails enviados: {intervals.length}/{intervals.length}</span>
                           </div>
                         )}
                       </td>
@@ -443,17 +442,17 @@ export default function InvoicesPage() {
                       {/* Acciones column */}
                       <td className="px-4 py-3">
                         {inv.status === "cancelled" ? (
-                          <span className="text-xs text-gray-400">Cancelada</span>
+                          <span className="text-xs text-gray-400 dark:text-slate-500">Cancelada</span>
                         ) : inv.status === "paid" ? (
                           <div className="flex items-center gap-1">
-                            <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200">
+                            <span className="inline-flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200 dark:border-green-800">
                               <CheckCircle className="w-3.5 h-3.5" />
                               Cobrada
                             </span>
                             <button
                               onClick={() => openDetail(inv.id)}
                               title="Ver todos los emails enviados a este cliente"
-                              className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 transition-all duration-150"
+                              className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 transition-all duration-150"
                             >
                               <History className="w-3.5 h-3.5" />
                               Historial
@@ -465,7 +464,7 @@ export default function InvoicesPage() {
                               onClick={() => handleMarkPaid(inv.id)}
                               disabled={!!actionId || !!sendingId}
                               title="Marcar esta factura como pagada y detener los recordatorios"
-                              className="inline-flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200 transition-all duration-150 disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200 dark:border-green-800 transition-all duration-150 disabled:opacity-50"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
                               {isMarkingPaid ? "..." : "Pagada"}
@@ -474,7 +473,7 @@ export default function InvoicesPage() {
                               onClick={() => handleSendManual(inv.id)}
                               disabled={!!actionId || !!sendingId}
                               title="Enviar un recordatorio de cobro ahora mismo a tu cliente"
-                              className="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-indigo-200 transition-all duration-150 disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-all duration-150 disabled:opacity-50"
                             >
                               {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                               {isSending ? "Enviando..." : "Enviar"}
@@ -484,7 +483,7 @@ export default function InvoicesPage() {
                                 onClick={() => handleToggleReminder(inv.id, inv.reminder_config.active)}
                                 disabled={!!actionId || !!sendingId}
                                 title={inv.reminder_config.active ? "Pausar los recordatorios automáticos para esta factura" : "Reanudar los recordatorios automáticos para esta factura"}
-                                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-all duration-150 disabled:opacity-50 ${inv.reminder_config.active ? "bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200" : "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200"}`}
+                                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-all duration-150 disabled:opacity-50 ${inv.reminder_config.active ? "bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800" : "bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-600"}`}
                               >
                                 {isToggling ? (
                                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -499,7 +498,7 @@ export default function InvoicesPage() {
                             <button
                               onClick={() => openDetail(inv.id)}
                               title="Ver todos los emails enviados a este cliente"
-                              className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 transition-all duration-150"
+                              className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 transition-all duration-150"
                             >
                               <History className="w-3.5 h-3.5" />
                               Historial
@@ -519,20 +518,20 @@ export default function InvoicesPage() {
       {/* Upgrade Modal */}
       {upgradeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/30">
               <span className="text-2xl">🚀</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Límite del plan Free alcanzado</h2>
-            <p className="text-sm text-gray-500 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">Límite del plan Free alcanzado</h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
               El plan gratuito permite hasta <strong>3 facturas activas</strong>. Actualizá al plan Pro para crear facturas ilimitadas con recordatorios automáticos.
             </p>
-            <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-6 py-4 mb-6 text-left">
+            <div className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 px-6 py-4 mb-6 text-left">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-indigo-900">Plan Pro</span>
-                <span className="text-xl font-bold text-indigo-700">$12/mes</span>
+                <span className="font-semibold text-indigo-900 dark:text-indigo-300">Plan Pro</span>
+                <span className="text-xl font-bold text-indigo-700 dark:text-indigo-400">$12/mes</span>
               </div>
-              <ul className="text-sm text-indigo-700 space-y-1">
+              <ul className="text-sm text-indigo-700 dark:text-indigo-400 space-y-1">
                 <li>✓ Facturas ilimitadas</li>
                 <li>✓ Recordatorios automáticos</li>
                 <li>✓ Emails generados con IA</li>
@@ -541,7 +540,7 @@ export default function InvoicesPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setUpgradeOpen(false)}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
               >
                 Ahora no
               </button>
@@ -561,12 +560,12 @@ export default function InvoicesPage() {
       {/* Create Modal */}
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Nueva factura</h2>
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Nueva factura</h2>
 
             <form noValidate onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Cliente *</label>
                 <select
                   value={form.client_id}
                   onChange={(e) => { setForm({ ...form, client_id: e.target.value }); setFormErrors((p) => ({ ...p, client_id: undefined })); }}
@@ -577,12 +576,12 @@ export default function InvoicesPage() {
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
-                {formErrors.client_id && <p className="mt-1 text-xs text-red-600">{formErrors.client_id}</p>}
+                {formErrors.client_id && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{formErrors.client_id}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de factura *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Número de factura *</label>
                   <input
                     type="text"
                     value={form.invoice_number}
@@ -590,10 +589,10 @@ export default function InvoicesPage() {
                     className={inputCls(formErrors.invoice_number)}
                     placeholder="INV-001"
                   />
-                  {formErrors.invoice_number && <p className="mt-1 text-xs text-red-600">{formErrors.invoice_number}</p>}
+                  {formErrors.invoice_number && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{formErrors.invoice_number}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Moneda</label>
                   <select
                     value={showCustomCurrency ? "OTHER" : form.currency}
                     onChange={(e) => {
@@ -626,13 +625,13 @@ export default function InvoicesPage() {
                       placeholder="Ej: CHF, NOK, JPY..."
                     />
                   )}
-                  {formErrors.currency && <p className="mt-1 text-xs text-red-600">{formErrors.currency}</p>}
+                  {formErrors.currency && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{formErrors.currency}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Monto *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Monto *</label>
                   <input
                     type="number"
                     min="0.01"
@@ -642,22 +641,22 @@ export default function InvoicesPage() {
                     className={inputCls(formErrors.amount)}
                     placeholder="1500.00"
                   />
-                  {formErrors.amount && <p className="mt-1 text-xs text-red-600">{formErrors.amount}</p>}
+                  {formErrors.amount && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{formErrors.amount}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vencimiento *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Vencimiento *</label>
                   <input
                     type="date"
                     value={form.due_date}
                     onChange={(e) => { setForm({ ...form, due_date: e.target.value }); setFormErrors((p) => ({ ...p, due_date: undefined })); }}
                     className={inputCls(formErrors.due_date)}
                   />
-                  {formErrors.due_date && <p className="mt-1 text-xs text-red-600">{formErrors.due_date}</p>}
+                  {formErrors.due_date && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{formErrors.due_date}</p>}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descripción</label>
                 <textarea
                   rows={2}
                   value={form.description}
@@ -673,30 +672,30 @@ export default function InvoicesPage() {
                     type="button"
                     disabled={userPlan === "free"}
                     onClick={() => { setReminderToggleTouched(true); setForm({ ...form, reminder_active: !form.reminder_active }); }}
-                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${userPlan === "free" || !form.reminder_active ? "bg-gray-300" : "bg-indigo-600"} disabled:cursor-not-allowed`}
+                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${userPlan === "free" || !form.reminder_active ? "bg-gray-300 dark:bg-slate-600" : "bg-indigo-600"} disabled:cursor-not-allowed`}
                   >
                     <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${userPlan !== "free" && form.reminder_active ? "translate-x-4" : "translate-x-0.5"}`} />
                   </button>
-                  <span className="text-sm text-gray-700 flex items-center gap-1.5">
-                    Recordatorios automáticos <span className="text-gray-400">(días 3, 7 y 14)</span>
-                    {userPlan === "free" && <Lock className="w-3 h-3 text-gray-400" />}
+                  <span className="text-sm text-gray-700 dark:text-slate-300 flex items-center gap-1.5">
+                    Recordatorios automáticos <span className="text-gray-400 dark:text-slate-500">(días 3, 7 y 14)</span>
+                    {userPlan === "free" && <Lock className="w-3 h-3 text-gray-400 dark:text-slate-500" />}
                   </span>
                 </div>
                 {userPlan === "free" ? (
                   <div className="mt-2 flex items-center gap-2">
-                    <Lock className="w-3 h-3 text-gray-400 shrink-0" />
-                    <p className="text-xs text-gray-500">
+                    <Lock className="w-3 h-3 text-gray-400 dark:text-slate-500 shrink-0" />
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       Los recordatorios automáticos requieren el{" "}
-                      <a href="/settings" className="text-indigo-600 hover:underline font-medium">
+                      <a href="/settings" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
                         Plan Pro — $12/mes
                       </a>
                     </p>
                   </div>
                 ) : reminderToggleTouched && !form.reminder_active ? (
-                  <div className="mt-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 flex gap-3">
-                    <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
-                    <p className="text-sm text-yellow-700">
-                      <span className="font-semibold text-yellow-800">Recordatorios desactivados.</span>
+                  <div className="mt-3 rounded-xl border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 p-4 flex gap-3">
+                    <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                      <span className="font-semibold text-yellow-800 dark:text-yellow-300">Recordatorios desactivados.</span>
                       {" "}Deberás enviar los emails de cobro manualmente desde el detalle de cada factura.
                     </p>
                   </div>
@@ -704,28 +703,28 @@ export default function InvoicesPage() {
               </div>
 
               {/* Email override — optional, collapsible */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-gray-200 dark:border-slate-600 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowEmailConfig(!showEmailConfig)}
-                  className="flex items-center gap-2 w-full text-left text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  className="flex items-center gap-2 w-full text-left text-sm text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
                 >
                   {showEmailConfig
                     ? <ChevronUp className="w-4 h-4" />
                     : <ChevronDown className="w-4 h-4" />
                   }
                   Personalizar emails para esta factura
-                  <span className="text-xs text-gray-400">(opcional — usa config del cliente por defecto)</span>
+                  <span className="text-xs text-gray-400 dark:text-slate-500">(opcional — usa config del cliente por defecto)</span>
                 </button>
 
                 {showEmailConfig && (
                   <div className="mt-3 space-y-3">
-                    <p className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+                    <p className="text-xs text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg px-3 py-2">
                       Esta configuración sobreescribe la del cliente solo para esta factura.
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Idioma</label>
                         <select
                           value={emailOverride.language}
                           onChange={(e) => setEmailOverride({ ...emailOverride, language: e.target.value })}
@@ -736,7 +735,7 @@ export default function InvoicesPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tono base</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tono base</label>
                         <select
                           value={emailOverride.tone}
                           onChange={(e) => setEmailOverride({ ...emailOverride, tone: e.target.value })}
@@ -750,7 +749,7 @@ export default function InvoicesPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tratamiento</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tratamiento</label>
                         <select
                           value={emailOverride.treatment}
                           onChange={(e) => setEmailOverride({ ...emailOverride, treatment: e.target.value })}
@@ -762,7 +761,7 @@ export default function InvoicesPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del remitente</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nombre del remitente</label>
                         <input
                           type="text"
                           value={emailOverride.sender_name}
@@ -773,7 +772,7 @@ export default function InvoicesPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Instrucciones adicionales</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Instrucciones adicionales</label>
                       <textarea
                         rows={2}
                         value={emailOverride.instructions}
@@ -791,7 +790,7 @@ export default function InvoicesPage() {
                 <button
                   type="button"
                   onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); setShowCustomCurrency(false); setReminderToggleTouched(false); setShowEmailConfig(false); setEmailOverride({ language: "es", tone: "semi-formal", treatment: "nombre", sender_name: "", instructions: "" }); }}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                 >
                   Cancelar
                 </button>
@@ -811,15 +810,15 @@ export default function InvoicesPage() {
       {/* Detail Modal */}
       {(detailInvoice || detailLoading) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
             {detailLoading ? (
-              <p className="text-sm text-gray-400 text-center py-8">Cargando...</p>
+              <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-8">Cargando...</p>
             ) : detailInvoice ? (
               <>
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Factura {detailInvoice.invoice_number}</h2>
-                    <p className="text-sm text-gray-500">{detailInvoice.client.name}</p>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Factura {detailInvoice.invoice_number}</h2>
+                    <p className="text-sm text-gray-500 dark:text-slate-400">{detailInvoice.client.name}</p>
                   </div>
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[detailInvoice.status]}`}>
                     {STATUS_LABEL[detailInvoice.status]}
@@ -838,7 +837,7 @@ export default function InvoicesPage() {
                     })()}
                   </Dt>
                   <Dt label="Recordatorios">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${detailInvoice.reminder_config.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${detailInvoice.reminder_config.active ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"}`}>
                       {detailInvoice.reminder_config.active ? "▶ Activos" : "⏸ Pausados"}
                     </span>
                   </Dt>
@@ -858,24 +857,24 @@ export default function InvoicesPage() {
                   };
                   const langLabel = config.language === "es" ? "🇪🇸 Español" : "🇺🇸 English";
                   return (
-                    <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    <div className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 mb-4">
+                      <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-3">
                         Configuración de emails activa
                       </h4>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div><span className="text-gray-400">Idioma:</span><span className="text-gray-700 ml-1">{langLabel}</span></div>
-                        <div><span className="text-gray-400">Tono:</span><span className="text-gray-700 ml-1">{config.tone}</span></div>
-                        <div><span className="text-gray-400">Tratamiento:</span><span className="text-gray-700 ml-1">{config.treatment}</span></div>
-                        <div><span className="text-gray-400">Remitente:</span><span className="text-gray-700 ml-1">{config.sender_name}</span></div>
+                        <div><span className="text-gray-400 dark:text-slate-500">Idioma:</span><span className="text-gray-700 dark:text-slate-300 ml-1">{langLabel}</span></div>
+                        <div><span className="text-gray-400 dark:text-slate-500">Tono:</span><span className="text-gray-700 dark:text-slate-300 ml-1">{config.tone}</span></div>
+                        <div><span className="text-gray-400 dark:text-slate-500">Tratamiento:</span><span className="text-gray-700 dark:text-slate-300 ml-1">{config.treatment}</span></div>
+                        <div><span className="text-gray-400 dark:text-slate-500">Remitente:</span><span className="text-gray-700 dark:text-slate-300 ml-1">{config.sender_name}</span></div>
                         {config.instructions && (
                           <div className="col-span-2">
-                            <span className="text-gray-400">Instrucciones:</span>
-                            <span className="text-gray-700 ml-1">{config.instructions}</span>
+                            <span className="text-gray-400 dark:text-slate-500">Instrucciones:</span>
+                            <span className="text-gray-700 dark:text-slate-300 ml-1">{config.instructions}</span>
                           </div>
                         )}
                         {override && (
                           <div className="col-span-2 mt-1">
-                            <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-600 text-xs px-2 py-0.5 rounded-full border border-indigo-200">
+                            <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
                               <Info className="w-3 h-3" />
                               Config personalizada para esta factura
                             </span>
@@ -890,31 +889,31 @@ export default function InvoicesPage() {
                   <button
                     onClick={() => handleSendNow(detailInvoice.id)}
                     disabled={sendingReminder}
-                    className="w-full mb-5 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-60 transition"
+                    className="w-full mb-5 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 disabled:opacity-60 transition"
                   >
                     {sendingReminder ? "Enviando..." : "📧 Enviar recordatorio ahora"}
                   </button>
                 )}
 
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Historial de emails</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Historial de emails</h3>
                 {!detailInvoice.email_logs || detailInvoice.email_logs.length === 0 ? (
-                  <p className="text-sm text-gray-400">No se han enviado emails aún.</p>
+                  <p className="text-sm text-gray-400 dark:text-slate-500">No se han enviado emails aún.</p>
                 ) : (
                   <div className="space-y-2">
                     {detailInvoice.email_logs.map((log) => (
-                      <div key={log.id} className="rounded-lg border border-gray-200 px-4 py-3 text-sm">
+                      <div key={log.id} className="rounded-lg border border-gray-200 dark:border-slate-600 px-4 py-3 text-sm">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900">Día {log.reminder_day}</span>
-                            <span className="text-xs text-gray-400">·</span>
-                            <span className="text-xs text-gray-500">{TONE_LABEL[log.tone] ?? log.tone}</span>
+                            <span className="font-medium text-gray-900 dark:text-slate-100">Día {log.reminder_day}</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">·</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400">{TONE_LABEL[log.tone] ?? log.tone}</span>
                           </div>
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${log.status === "sent" ? "bg-green-100 text-green-700" : log.status === "opened" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${log.status === "sent" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : log.status === "opened" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"}`}>
                             {log.status === "sent" ? "Enviado" : log.status === "opened" ? "Abierto" : "Fallido"}
                           </span>
                         </div>
-                        <p className="text-gray-400 text-xs mt-1">{new Date(log.sent_at).toLocaleString("es")}</p>
-                        {log.error_message && <p className="text-red-600 text-xs mt-1">{log.error_message}</p>}
+                        <p className="text-gray-400 dark:text-slate-500 text-xs mt-1">{new Date(log.sent_at).toLocaleString("es")}</p>
+                        {log.error_message && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{log.error_message}</p>}
                       </div>
                     ))}
                   </div>
@@ -922,7 +921,7 @@ export default function InvoicesPage() {
 
                 <button
                   onClick={() => setDetailInvoice(null)}
-                  className="mt-6 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                  className="mt-6 w-full rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                 >
                   Cerrar
                 </button>
@@ -938,8 +937,8 @@ export default function InvoicesPage() {
 function Dt({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
   return (
     <div className={full ? "col-span-2" : ""}>
-      <dt className="text-xs text-gray-500 uppercase tracking-wide">{label}</dt>
-      <dd className="mt-0.5 text-gray-900">{children}</dd>
+      <dt className="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wide">{label}</dt>
+      <dd className="mt-0.5 text-gray-900 dark:text-slate-100">{children}</dd>
     </div>
   );
 }

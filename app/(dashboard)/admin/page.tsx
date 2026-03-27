@@ -29,25 +29,25 @@ interface FeedbackItem {
 }
 
 const CATEGORY_STYLES: Record<string, { label: string; cls: string }> = {
-  bug:         { label: "🐛 Bug",     cls: "bg-red-50 text-red-700 border border-red-200" },
-  feature:     { label: "✨ Feature", cls: "bg-purple-50 text-purple-700 border border-purple-200" },
-  improvement: { label: "🔧 Mejora",  cls: "bg-blue-50 text-blue-700 border border-blue-200" },
-  other:       { label: "💬 Otro",    cls: "bg-gray-100 text-gray-600 border border-gray-200" },
+  bug:         { label: "🐛 Bug",     cls: "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" },
+  feature:     { label: "✨ Feature", cls: "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800" },
+  improvement: { label: "🔧 Mejora",  cls: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800" },
+  other:       { label: "💬 Otro",    cls: "bg-gray-100 text-gray-600 border border-gray-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600" },
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
-  high:   "bg-red-50 text-red-700 border border-red-200",
-  medium: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-  low:    "bg-green-50 text-green-700 border border-green-200",
+  high:   "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
+  medium: "bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
+  low:    "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
 };
 
 const PRIORITY_LABELS: Record<string, string> = { high: "Alta", medium: "Media", low: "Baja" };
 
 const STATUS_STYLES: Record<string, string> = {
-  pending:     "bg-gray-100 text-gray-600",
-  reviewed:    "bg-blue-50 text-blue-700",
-  in_progress: "bg-yellow-50 text-yellow-700",
-  done:        "bg-green-50 text-green-700",
+  pending:     "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-400",
+  reviewed:    "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  in_progress: "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  done:        "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -146,7 +146,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
             Panel de Admin — Feedback
             {pendingCount > 0 && (
               <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -154,7 +154,7 @@ export default function AdminPage() {
               </span>
             )}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             {feedbacks.length} entradas totales
           </p>
         </div>
@@ -169,7 +169,7 @@ export default function AdminPage() {
             className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
               statusFilter === opt.value
                 ? "bg-indigo-600 text-white"
-                : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                : "bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700"
             }`}
           >
             {opt.label}
@@ -178,29 +178,29 @@ export default function AdminPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="px-6 py-10 text-sm text-gray-400 text-center">Cargando...</div>
+          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">Cargando...</div>
         ) : feedbacks.length === 0 ? (
-          <div className="px-6 py-10 text-sm text-gray-400 text-center">No hay feedbacks para este filtro.</div>
+          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">No hay feedbacks para este filtro.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
                   {["Usuario", "Categoría", "Prioridad", "Rating", "Mensaje", "Fecha", "Status", ""].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                 {feedbacks.map((fb) => (
-                  <tr key={fb.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{fb.user.full_name}</div>
-                      <div className="text-gray-400">{fb.user.email}</div>
+                  <tr key={fb.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
+                    <td className="px-4 py-3 text-gray-600 dark:text-slate-400 text-xs whitespace-nowrap">
+                      <div className="font-medium text-gray-900 dark:text-slate-100">{fb.user.full_name}</div>
+                      <div className="text-gray-400 dark:text-slate-500">{fb.user.email}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CATEGORY_STYLES[fb.category]?.cls ?? ""}`}>
@@ -217,17 +217,17 @@ export default function AdminPage() {
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star
                             key={s}
-                            className={`w-3.5 h-3.5 ${s <= fb.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}`}
+                            className={`w-3.5 h-3.5 ${s <= fb.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200 dark:text-slate-600"}`}
                           />
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs">
+                    <td className="px-4 py-3 text-gray-600 dark:text-slate-400 max-w-xs">
                       <span title={fb.message}>
                         {fb.message.length > 80 ? fb.message.slice(0, 80) + "…" : fb.message}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs whitespace-nowrap">
                       {new Date(fb.created_at).toLocaleDateString("es")}
                     </td>
                     <td className="px-4 py-3">
@@ -238,7 +238,7 @@ export default function AdminPage() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => openDetail(fb)}
-                        className="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition whitespace-nowrap"
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium transition whitespace-nowrap"
                       >
                         Ver detalle
                       </button>
@@ -254,13 +254,13 @@ export default function AdminPage() {
       {/* Detail Modal */}
       {selectedFeedback && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Detalle de feedback</h2>
-                <p className="text-sm text-gray-500">{selectedFeedback.user.full_name} · {selectedFeedback.user.email}</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Detalle de feedback</h2>
+                <p className="text-sm text-gray-500 dark:text-slate-400">{selectedFeedback.user.full_name} · {selectedFeedback.user.email}</p>
               </div>
-              <button onClick={() => setSelectedFeedback(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+              <button onClick={() => setSelectedFeedback(null)} className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-xl leading-none">×</button>
             </div>
 
             {/* Info row */}
@@ -273,25 +273,25 @@ export default function AdminPage() {
               </span>
               <div className="flex gap-0.5 items-center">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} className={`w-3.5 h-3.5 ${s <= selectedFeedback.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}`} />
+                  <Star key={s} className={`w-3.5 h-3.5 ${s <= selectedFeedback.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200 dark:text-slate-600"}`} />
                 ))}
               </div>
-              <span className="text-xs text-gray-400">{new Date(selectedFeedback.created_at).toLocaleDateString("es")}</span>
+              <span className="text-xs text-gray-400 dark:text-slate-500">{new Date(selectedFeedback.created_at).toLocaleDateString("es")}</span>
             </div>
 
             {/* Message */}
-            <div className="bg-gray-50 rounded-xl p-4 mb-5 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            <div className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 mb-5 text-sm text-gray-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
               {selectedFeedback.message}
             </div>
 
             {/* Update form */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Status</label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition"
                 >
                   <option value="pending">Pendiente</option>
                   <option value="reviewed">En revisión</option>
@@ -300,19 +300,19 @@ export default function AdminPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notas internas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Notas internas</label>
                 <textarea
                   rows={3}
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition resize-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition resize-none"
                   placeholder="Notas internas (no visibles al usuario)"
                 />
               </div>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setSelectedFeedback(null)}
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                 >
                   Cerrar
                 </button>

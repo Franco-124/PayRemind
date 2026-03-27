@@ -39,7 +39,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-gray-400">
+      <div className="flex items-center justify-center h-48 text-sm text-gray-400 dark:text-slate-500">
         Cargando...
       </div>
     );
@@ -49,38 +49,38 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Ajustes</h1>
-        <p className="text-sm text-gray-500 mt-1">Administra tu cuenta y suscripción</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Ajustes</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Administra tu cuenta y suscripción</p>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* Account section */}
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-100">
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm divide-y divide-gray-100 dark:divide-slate-700">
         <div className="px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">Mi cuenta</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Mi cuenta</h2>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nombre</p>
-            <p className="mt-1 text-sm text-gray-900">{user?.full_name}</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Nombre</p>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{user?.full_name}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</p>
-            <p className="mt-1 text-sm text-gray-900">{user?.email}</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Email</p>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{user?.email}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Plan</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Plan</p>
             <div className="mt-1">
               <span
                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                   user?.plan === "pro"
-                    ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
-                    : "bg-gray-100 text-gray-600 border border-gray-200"
+                    ? "bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800"
+                    : "bg-gray-100 text-gray-600 border border-gray-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"
                 }`}
               >
                 {user?.plan === "pro" ? "PRO" : "Free"}
@@ -88,8 +88,8 @@ export default function SettingsPage() {
             </div>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Miembro desde</p>
-            <p className="mt-1 text-sm text-gray-900">
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Miembro desde</p>
+            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">
               {user?.created_at ? new Date(user.created_at).toLocaleDateString("es") : "—"}
             </p>
           </div>
@@ -97,44 +97,44 @@ export default function SettingsPage() {
       </section>
 
       {/* Subscription section */}
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-100">
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm divide-y divide-gray-100 dark:divide-slate-700">
         <div className="px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">Suscripción</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Suscripción</h2>
         </div>
         <div className="px-6 py-5">
           {user?.plan === "pro" ? (
-            <div className={`rounded-xl border-2 border-indigo-200 bg-indigo-50 p-5`}>
+            <div className="rounded-xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Plan Pro activo</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">Plan Pro activo</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                     Disfrutás de recordatorios ilimitados y todas las funciones premium.
                   </p>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-indigo-200">
-                <p className="text-xs text-gray-500 mb-3">
+              <div className="mt-4 pt-4 border-t border-indigo-200 dark:border-indigo-800">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
                   Para cancelar o modificar tu suscripción:
                 </p>
                 <a
                   href="https://app.lemonsqueezy.com/my-orders"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 shadow-sm transition-all duration-150"
+                  className="inline-flex items-center gap-2 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Gestionar suscripción
                 </a>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">
                   Para cancelar tu suscripción, revisa el email
                   de confirmación que recibiste al suscribirte —
                   contiene un link directo para gestionar tu plan.
                   También puedes escribirnos a
                   <a href="mailto:support@revoluciona.online"
-                     className="text-indigo-600 hover:underline ml-1">
+                     className="text-indigo-600 dark:text-indigo-400 hover:underline ml-1">
                     support@revoluciona.online
                   </a>
                   {" "}y lo gestionamos por ti.
@@ -142,22 +142,22 @@ export default function SettingsPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 p-5">
+            <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-600 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Plan Free</p>
-                  <p className="text-xs text-gray-500 mt-1 max-w-xs">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">Plan Free</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 max-w-xs">
                     Hasta 3 facturas activas. Actualizá a Pro para desbloquear recordatorios ilimitados y acceso prioritario.
                   </p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-gray-500">
+                  <ul className="mt-3 space-y-1.5 text-xs text-gray-500 dark:text-slate-400">
                     <li className="flex items-center gap-1.5"><span className="text-green-500">✓</span> 3 facturas activas</li>
                     <li className="flex items-center gap-1.5"><span className="text-green-500">✓</span> Recordatorios manuales</li>
-                    <li className="flex items-center gap-1.5 text-gray-400"><span>✗</span> Recordatorios automáticos</li>
-                    <li className="flex items-center gap-1.5 text-gray-400"><span>✗</span> Facturas ilimitadas</li>
+                    <li className="flex items-center gap-1.5 text-gray-400 dark:text-slate-500"><span>✗</span> Recordatorios automáticos</li>
+                    <li className="flex items-center gap-1.5 text-gray-400 dark:text-slate-500"><span>✗</span> Facturas ilimitadas</li>
                   </ul>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-2xl font-bold text-gray-900 mb-3">$12<span className="text-sm font-normal text-gray-500">/mes</span></p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-3">$12<span className="text-sm font-normal text-gray-500 dark:text-slate-400">/mes</span></p>
                   <a
                     href={CHECKOUT_URL}
                     target="_blank"

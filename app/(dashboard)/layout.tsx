@@ -7,6 +7,7 @@ import {
   LayoutDashboard, FileText, Users, Mail, Settings,
   BellRing, LogOut, MessageSquare, Shield,
 } from "lucide-react";
+import { ThemeSelector } from "@/app/components/ui/theme-selector";
 
 const ADMIN_EMAIL = "johan.franco@nousware.ai";
 
@@ -41,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   function handleLogout() {
     localStorage.removeItem("access_token");
-    router.replace("/login");  // replace instead of push — disables back-navigation to dashboard
+    router.replace("/login");
   }
 
   const initials = userName
@@ -51,24 +52,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       {/* Mobile block */}
-      <div className="md:hidden flex items-center justify-center min-h-screen bg-gray-50 p-8 text-center">
+      <div className="md:hidden flex items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900 p-8 text-center">
         <div>
           <p className="text-2xl mb-4">💻</p>
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-2">
             PayRemind works best on desktop
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-slate-400">
             Please open PayRemind on your computer for the best experience.
           </p>
         </div>
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden md:flex h-screen bg-gray-50 overflow-hidden">
+      <div className="hidden md:flex h-screen bg-gray-50 dark:bg-slate-900 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-64 bg-gray-900 flex flex-col shrink-0">
+        <aside className="w-64 bg-gray-900 dark:bg-slate-950 flex flex-col shrink-0">
           {/* Logo */}
-          <div className="px-6 py-6 flex items-center gap-2.5 border-b border-gray-800">
+          <div className="px-6 py-6 flex items-center gap-2.5 border-b border-gray-800 dark:border-slate-700">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
               <BellRing className="h-4 w-4 text-white" />
             </div>
@@ -86,7 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-indigo-600 text-white"
-                      : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                      : "text-gray-400 hover:bg-gray-800 dark:hover:bg-slate-800 hover:text-white"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -101,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
                   pathname.startsWith("/admin")
                     ? "bg-indigo-600 text-white"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                    : "text-gray-400 hover:bg-gray-800 dark:hover:bg-slate-800 hover:text-white"
                 }`}
               >
                 <Shield className="h-4 w-4 shrink-0" />
@@ -110,21 +111,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </nav>
 
-          {/* Footer — avatar + logout */}
-          <div className="px-3 py-4 border-t border-gray-800">
-            <div className="flex items-center gap-3 px-3 py-2 mb-1">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold select-none">
-                {initials}
-              </div>
-              <span className="text-sm text-gray-300 truncate min-w-0">{userName}</span>
+          {/* Footer — theme + avatar + logout */}
+          <div className="px-3 py-4 border-t border-gray-800 dark:border-slate-700 space-y-3">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mb-2 px-1">Tema</p>
+              <ThemeSelector />
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-150"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              Cerrar sesión
-            </button>
+            <div>
+              <div className="flex items-center gap-3 px-3 py-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold select-none">
+                  {initials}
+                </div>
+                <span className="text-sm text-gray-300 truncate min-w-0">{userName}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 dark:hover:bg-slate-800 transition-all duration-150"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                Cerrar sesión
+              </button>
+            </div>
           </div>
         </aside>
 
