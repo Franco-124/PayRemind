@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, ExternalLink } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 
 const CHECKOUT_URL = "https://payremind.lemonsqueezy.com/checkout/buy/69ade413-496f-479e-b5db-a1aa7314f163";
@@ -112,6 +112,23 @@ export default function SettingsPage() {
                     Disfrutás de recordatorios ilimitados y todas las funciones premium.
                   </p>
                 </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-indigo-200">
+                <p className="text-xs text-gray-500 mb-3">
+                  Para cancelar o modificar tu suscripción:
+                </p>
+                <a
+                  href="https://app.lemonsqueezy.com/my-orders"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 shadow-sm transition-all duration-150"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Gestionar suscripción
+                </a>
+                <p className="text-xs text-gray-400 mt-2">
+                  Al cancelar mantendrás el acceso Pro hasta el final del período actual.
+                </p>
               </div>
             </div>
           ) : (
