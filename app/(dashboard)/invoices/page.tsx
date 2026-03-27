@@ -347,7 +347,12 @@ export default function InvoicesPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4 text-xs whitespace-nowrap">
-                        {inv.status === "paid" || inv.status === "cancelled" ? (
+                        {userPlan === "free" ? (
+                          <a href="/settings" className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition-colors">
+                            <Lock className="w-3 h-3" />
+                            Solo Plan Pro
+                          </a>
+                        ) : inv.status === "paid" || inv.status === "cancelled" ? (
                           <span className="text-gray-400">—</span>
                         ) : !inv.reminder_config.active ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 text-xs font-medium">⏸ Pausado</span>
@@ -369,13 +374,15 @@ export default function InvoicesPage() {
                               >
                                 {isPaid ? "..." : "✓ Pagada"}
                               </button>
-                              <button
-                                onClick={() => handleToggleReminder(inv.id, inv.reminder_config.active)}
-                                disabled={!!actionId}
-                                className="text-gray-500 hover:text-gray-800 text-xs font-medium disabled:opacity-50 transition whitespace-nowrap"
-                              >
-                                {isToggling ? "..." : inv.reminder_config.active ? "⏸ Pausar" : "▶ Reanudar"}
-                              </button>
+                              {userPlan === "pro" && (
+                                <button
+                                  onClick={() => handleToggleReminder(inv.id, inv.reminder_config.active)}
+                                  disabled={!!actionId}
+                                  className="text-gray-500 hover:text-gray-800 text-xs font-medium disabled:opacity-50 transition whitespace-nowrap"
+                                >
+                                  {isToggling ? "..." : inv.reminder_config.active ? "⏸ Pausar" : "▶ Reanudar"}
+                                </button>
+                              )}
                             </>
                           )}
                           <button
