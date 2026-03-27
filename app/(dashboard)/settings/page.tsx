@@ -127,7 +127,15 @@ export default function SettingsPage() {
                   Gestionar suscripción
                 </a>
                 <p className="text-xs text-gray-400 mt-2">
-                  Al cancelar mantendrás el acceso Pro hasta el final del período actual.
+                  Para cancelar tu suscripción, revisa el email
+                  de confirmación que recibiste al suscribirte —
+                  contiene un link directo para gestionar tu plan.
+                  También puedes escribirnos a
+                  <a href="mailto:support@revoluciona.online"
+                     className="text-indigo-600 hover:underline ml-1">
+                    support@revoluciona.online
+                  </a>
+                  {" "}y lo gestionamos por ti.
                 </p>
               </div>
             </div>
