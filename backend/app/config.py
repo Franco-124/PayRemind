@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     lemon_squeezy_api_key: str = ""
     lemon_squeezy_store_id: str = ""
     lemon_squeezy_pro_variant_id: str = ""
+    admin_email: str = "johan.franco@nousware.ai"
 
     class Config:
         env_file = ".env"

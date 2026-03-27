@@ -3,13 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, Users, Mail, Settings, BellRing, LogOut } from "lucide-react";
+import {
+  LayoutDashboard, FileText, Users, Mail, Settings,
+  BellRing, LogOut, MessageSquare, Shield,
+} from "lucide-react";
+
+const ADMIN_EMAIL = "johan.franco@nousware.ai";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Facturas",  href: "/invoices",  icon: FileText },
   { label: "Clientes",  href: "/clients",   icon: Users },
   { label: "Emails",    href: "/emails",    icon: Mail },
+  { label: "Feedback",  href: "/feedback",  icon: MessageSquare },
   { label: "Ajustes",   href: "/settings",  icon: Settings },
 ];
 
@@ -17,13 +23,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [userName, setUserName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) { router.replace("/login"); return; }
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-      setUserName(payload.sub ?? "");
+      const email = payload.sub ?? "";
+      setUserName(email);
+      setIsAdmin(email === ADMIN_EMAIL);
     } catch {
       localStorage.removeItem("access_token");
       router.replace("/login");
@@ -85,6 +94,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               );
             })}
+
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
+                  pathname.startsWith("/admin")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                }`}
+              >
+                <Shield className="h-4 w-4 shrink-0" />
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* Footer — avatar + logout */}

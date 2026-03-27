@@ -12,6 +12,7 @@ from app.config import settings
 from app.routers import auth as auth_router
 from app.routers import clients as clients_router
 from app.routers import email_logs as email_logs_router
+from app.routers import feedback as feedback_router
 from app.routers import invoices as invoices_router
 from app.routers import webhooks as webhooks_router
 from app.scheduler.jobs import check_and_send_reminders
@@ -57,4 +58,5 @@ app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 app.include_router(clients_router.router, prefix="/clients", tags=["clients"])
 app.include_router(invoices_router.router, prefix="/invoices", tags=["invoices"])
 app.include_router(email_logs_router.router, prefix="/email-logs", tags=["email-logs"])
+app.include_router(feedback_router.router, prefix="/feedback", tags=["feedback"])
 app.include_router(webhooks_router.router, prefix="/webhooks", tags=["webhooks"])
