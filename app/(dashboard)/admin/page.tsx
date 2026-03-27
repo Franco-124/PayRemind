@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 
 const ADMIN_EMAIL = "johan.franco@nousware.ai";
@@ -65,6 +66,7 @@ const STATUS_FILTER_OPTIONS = [
 ];
 
 export default function AdminPage() {
+  useRequireAuth();
   const router = useRouter();
   const toast = useToastContext();
 

@@ -9,6 +9,7 @@ import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateRequired, validateAmount } from "@/app/lib/validations";
 import { CURRENCIES } from "@/app/lib/currencies";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 
 interface Client {
   id: string;
@@ -98,6 +99,7 @@ function nextReminderLabel(inv: Invoice): string {
 }
 
 export default function InvoicesPage() {
+  useRequireAuth();
   const toast = useToastContext();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);

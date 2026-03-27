@@ -41,7 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   function handleLogout() {
     localStorage.removeItem("access_token");
-    router.replace("/login");
+    router.replace("/login");  // replace instead of push — disables back-navigation to dashboard
   }
 
   const initials = userName

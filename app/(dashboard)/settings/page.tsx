@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, ExternalLink } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 
 const CHECKOUT_URL = "https://payremind.lemonsqueezy.com/checkout/buy/69ade413-496f-479e-b5db-a1aa7314f163";
 
@@ -16,6 +17,7 @@ interface UserInfo {
 }
 
 export default function SettingsPage() {
+  useRequireAuth();
   const router = useRouter();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);

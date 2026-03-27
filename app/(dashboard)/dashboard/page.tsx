@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Clock, DollarSign, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 
 interface Invoice {
   id: string;
@@ -27,6 +28,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  useRequireAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

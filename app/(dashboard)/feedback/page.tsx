@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Star, Send, CheckCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 
 interface FeedbackForm {
@@ -41,6 +42,7 @@ const PRIORITY_STYLES: Record<string, { selected: string; base: string }> = {
 };
 
 export default function FeedbackPage() {
+  useRequireAuth();
   const toast = useToastContext();
   const [form, setForm] = useState<FeedbackForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FeedbackForm, string>>>({});

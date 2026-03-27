@@ -31,6 +31,11 @@ async function request<T>(
   return res.json();
 }
 
+export function isAuthenticated(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem("access_token");
+}
+
 export const apiClient = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body: unknown) =>

@@ -5,6 +5,7 @@ import { Users, Mail, ChevronDown, ChevronUp } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateEmail, validateRequired } from "@/app/lib/validations";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 
 interface Client {
   id: string;
@@ -158,6 +159,7 @@ function EmailConfigSection({
 }
 
 export default function ClientsPage() {
+  useRequireAuth();
   const toast = useToastContext();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);

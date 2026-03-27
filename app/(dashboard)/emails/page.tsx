@@ -5,6 +5,7 @@ import { Mail } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { apiClient } from "@/lib/api-client";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 
 interface EmailLog {
   id: string;
@@ -40,6 +41,7 @@ function exactDate(iso: string) {
 }
 
 export default function EmailsPage() {
+  useRequireAuth();
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"" | "sent" | "failed">("");
