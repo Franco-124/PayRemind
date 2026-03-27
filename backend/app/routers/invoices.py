@@ -85,12 +85,12 @@ def toggle_reminders(
 
 
 @router.post(
-    "/{invoice_id}/test-reminder",
+    "/{invoice_id}/send-reminder",
     response_model=dict,
     status_code=status.HTTP_200_OK,
     summary="Send reminder immediately",
 )
-def test_reminder(
+def send_reminder(
     invoice_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

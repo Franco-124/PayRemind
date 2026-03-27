@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, AlertCircle, Lock } from "lucide-react";
+import {
+  Clock, AlertCircle, Lock, CheckCircle, PauseCircle,
+  PlayCircle, Send, History, Loader2,
+} from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateRequired, validateAmount } from "@/app/lib/validations";
@@ -107,6 +110,7 @@ export default function InvoicesPage() {
   const [showCustomCurrency, setShowCustomCurrency] = useState(false);
   const [reminderToggleTouched, setReminderToggleTouched] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   async function fetchInvoices() {
@@ -232,6 +236,19 @@ export default function InvoicesPage() {
     }
   }
 
+  async function handleSendManual(id: string) {
+    setSendingId(id);
+    try {
+      await apiClient.post(`/invoices/${id}/send-reminder`, {});
+      toast.success("✉️ Recordatorio enviado correctamente");
+      fetchInvoices();
+    } catch {
+      toast.error("Error al enviar el recordatorio");
+    } finally {
+      setSendingId(null);
+    }
+  }
+
   async function openDetail(id: string) {
     setDetailLoading(true);
     try {
@@ -247,7 +264,7 @@ export default function InvoicesPage() {
   async function handleSendNow(id: string) {
     setSendingReminder(true);
     try {
-      await apiClient.post(`/invoices/${id}/test-reminder`, {});
+      await apiClient.post(`/invoices/${id}/send-reminder`, {});
       toast.success("Recordatorio enviado");
       const updated = await apiClient.get<InvoiceDetail>(`/invoices/${id}`);
       setDetailInvoice(updated);
@@ -321,7 +338,7 @@ export default function InvoicesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  {["#", "Cliente", "Monto", "Vencimiento", "Estado", "Próx. recordatorio", "Acciones"].map((h) => (
+                  {["#", "Cliente", "Monto", "Vencimiento", "Estado", "Recordatorios", "Acciones"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
@@ -331,8 +348,17 @@ export default function InvoicesPage() {
               <tbody className="divide-y divide-gray-100">
                 {invoices.map((inv) => {
                   const isActive = inv.status === "pending" || inv.status === "overdue";
-                  const isPaid = actionId === inv.id + ":paid";
+                  const isMarkingPaid = actionId === inv.id + ":paid";
                   const isToggling = actionId === inv.id + ":toggle";
+                  const isSending = sendingId === inv.id;
+
+                  const today = new Date(); today.setHours(0, 0, 0, 0);
+                  const due = new Date(inv.due_date + "T00:00:00");
+                  const daysSinceDue = Math.floor((today.getTime() - due.getTime()) / 86400000);
+                  const intervals = inv.reminder_config.intervals ?? [3, 7, 14];
+                  const nextInterval = intervals.find((d) => d > daysSinceDue);
+                  const daysUntilNext = nextInterval !== undefined ? nextInterval - daysSinceDue : null;
+
                   return (
                     <tr key={inv.id} className="hover:bg-gray-50 transition">
                       <td className="px-4 py-3 font-mono text-gray-700 whitespace-nowrap">{inv.invoice_number}</td>
@@ -346,52 +372,117 @@ export default function InvoicesPage() {
                           {STATUS_LABEL[inv.status]}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-xs whitespace-nowrap">
-                        {userPlan === "free" ? (
-                          <a href="/settings" className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition-colors">
-                            <Lock className="w-3 h-3" />
-                            Solo Plan Pro
-                          </a>
-                        ) : inv.status === "paid" || inv.status === "cancelled" ? (
-                          <span className="text-gray-400">—</span>
+
+                      {/* Recordatorios column */}
+                      <td className="px-4 py-3">
+                        {inv.status === "paid" || inv.status === "cancelled" ? (
+                          <span className="text-xs text-gray-400">—</span>
+                        ) : userPlan === "free" ? (
+                          <div className="flex flex-col gap-0.5">
+                            <a href="/settings" className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition-colors">
+                              <Lock className="w-3 h-3" />
+                              Solo Plan Pro
+                            </a>
+                            <span className="text-xs text-gray-400">Envía manualmente</span>
+                          </div>
                         ) : !inv.reminder_config.active ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 text-xs font-medium">⏸ Pausado</span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1 text-xs text-yellow-600 font-medium">
+                              <PauseCircle className="w-3 h-3" />
+                              Pausado
+                            </span>
+                            <span className="text-xs text-gray-400">Envía manualmente cuando quieras</span>
+                          </div>
+                        ) : daysSinceDue < 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                              <CheckCircle className="w-3 h-3" />
+                              Automático activo
+                            </span>
+                            <span className="text-xs text-gray-400">Inicia el día 3 tras vencer</span>
+                          </div>
+                        ) : nextInterval !== undefined ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1 text-xs text-indigo-600 font-medium">
+                              <Clock className="w-3 h-3" />
+                              Próximo: Día {nextInterval}
+                            </span>
+                            <span className="text-xs text-gray-400">en {daysUntilNext} día{daysUntilNext === 1 ? "" : "s"}</span>
+                          </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-indigo-600 font-medium">
-                            <Clock className="w-3 h-3" />
-                            {nextReminderLabel(inv)}
-                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs text-gray-500 font-medium">Ciclo completado</span>
+                            <span className="text-xs text-gray-400">Emails enviados: {intervals.length}/{intervals.length}</span>
+                          </div>
                         )}
                       </td>
+
+                      {/* Acciones column */}
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {isActive && (
-                            <>
+                        {inv.status === "cancelled" ? (
+                          <span className="text-xs text-gray-400">Cancelada</span>
+                        ) : inv.status === "paid" ? (
+                          <div className="flex items-center gap-1">
+                            <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Cobrada
+                            </span>
+                            <button
+                              onClick={() => openDetail(inv.id)}
+                              title="Ver todos los emails enviados a este cliente"
+                              className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 transition-all duration-150"
+                            >
+                              <History className="w-3.5 h-3.5" />
+                              Historial
+                            </button>
+                          </div>
+                        ) : isActive ? (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => handleMarkPaid(inv.id)}
+                              disabled={!!actionId || !!sendingId}
+                              title="Marcar esta factura como pagada y detener los recordatorios"
+                              className="inline-flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200 transition-all duration-150 disabled:opacity-50"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              {isMarkingPaid ? "..." : "Pagada"}
+                            </button>
+                            <button
+                              onClick={() => handleSendManual(inv.id)}
+                              disabled={!!actionId || !!sendingId}
+                              title="Enviar un recordatorio de cobro ahora mismo a tu cliente"
+                              className="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-indigo-200 transition-all duration-150 disabled:opacity-50"
+                            >
+                              {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                              {isSending ? "Enviando..." : "Enviar"}
+                            </button>
+                            {userPlan === "pro" && (
                               <button
-                                onClick={() => handleMarkPaid(inv.id)}
-                                disabled={!!actionId}
-                                className="text-green-600 hover:text-green-800 text-xs font-medium disabled:opacity-50 transition whitespace-nowrap"
+                                onClick={() => handleToggleReminder(inv.id, inv.reminder_config.active)}
+                                disabled={!!actionId || !!sendingId}
+                                title={inv.reminder_config.active ? "Pausar los recordatorios automáticos para esta factura" : "Reanudar los recordatorios automáticos para esta factura"}
+                                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-all duration-150 disabled:opacity-50 ${inv.reminder_config.active ? "bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200" : "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200"}`}
                               >
-                                {isPaid ? "..." : "✓ Pagada"}
+                                {isToggling ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : inv.reminder_config.active ? (
+                                  <PauseCircle className="w-3.5 h-3.5" />
+                                ) : (
+                                  <PlayCircle className="w-3.5 h-3.5" />
+                                )}
+                                {isToggling ? "..." : inv.reminder_config.active ? "Pausar" : "Reanudar"}
                               </button>
-                              {userPlan === "pro" && (
-                                <button
-                                  onClick={() => handleToggleReminder(inv.id, inv.reminder_config.active)}
-                                  disabled={!!actionId}
-                                  className="text-gray-500 hover:text-gray-800 text-xs font-medium disabled:opacity-50 transition whitespace-nowrap"
-                                >
-                                  {isToggling ? "..." : inv.reminder_config.active ? "⏸ Pausar" : "▶ Reanudar"}
-                                </button>
-                              )}
-                            </>
-                          )}
-                          <button
-                            onClick={() => openDetail(inv.id)}
-                            className="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition whitespace-nowrap"
-                          >
-                            Ver emails
-                          </button>
-                        </div>
+                            )}
+                            <button
+                              onClick={() => openDetail(inv.id)}
+                              title="Ver todos los emails enviados a este cliente"
+                              className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 transition-all duration-150"
+                            >
+                              <History className="w-3.5 h-3.5" />
+                              Historial
+                            </button>
+                          </div>
+                        ) : null}
                       </td>
                     </tr>
                   );
