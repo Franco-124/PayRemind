@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateRequired, validateAmount } from "@/app/lib/validations";
@@ -104,6 +104,7 @@ export default function InvoicesPage() {
   const [sendingReminder, setSendingReminder] = useState(false);
 
   const [showCustomCurrency, setShowCustomCurrency] = useState(false);
+  const [reminderToggleTouched, setReminderToggleTouched] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
@@ -178,6 +179,7 @@ export default function InvoicesPage() {
       setCreateOpen(false);
       setForm(EMPTY_FORM);
       setShowCustomCurrency(false);
+      setReminderToggleTouched(false);
       toast.success("Factura creada correctamente");
       fetchInvoices();
     } catch (err) {
@@ -537,23 +539,34 @@ export default function InvoicesPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-3 py-1">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, reminder_active: !form.reminder_active })}
-                  className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${form.reminder_active ? "bg-indigo-600" : "bg-gray-300"}`}
-                >
-                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${form.reminder_active ? "translate-x-4" : "translate-x-0.5"}`} />
-                </button>
-                <span className="text-sm text-gray-700">
-                  Recordatorios automáticos <span className="text-gray-400">(días 3, 7 y 14)</span>
-                </span>
+              <div>
+                <div className="flex items-center gap-3 py-1">
+                  <button
+                    type="button"
+                    onClick={() => { setReminderToggleTouched(true); setForm({ ...form, reminder_active: !form.reminder_active }); }}
+                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${form.reminder_active ? "bg-indigo-600" : "bg-gray-300"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${form.reminder_active ? "translate-x-4" : "translate-x-0.5"}`} />
+                  </button>
+                  <span className="text-sm text-gray-700">
+                    Recordatorios automáticos <span className="text-gray-400">(días 3, 7 y 14)</span>
+                  </span>
+                </div>
+                {reminderToggleTouched && !form.reminder_active && (
+                  <div className="mt-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 flex gap-3">
+                    <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-yellow-700">
+                      <span className="font-semibold text-yellow-800">Recordatorios desactivados.</span>
+                      {" "}Deberás enviar los emails de cobro manualmente desde el detalle de cada factura.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); setShowCustomCurrency(false); }}
+                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); setShowCustomCurrency(false); setReminderToggleTouched(false); }}
                   className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                 >
                   Cancelar
