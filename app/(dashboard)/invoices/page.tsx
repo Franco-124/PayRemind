@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateRequired, validateAmount } from "@/app/lib/validations";
+import { CURRENCIES } from "@/app/lib/currencies";
 
 interface Client {
   id: string;
@@ -101,6 +102,7 @@ export default function InvoicesPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
+  const [showCustomCurrency, setShowCustomCurrency] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
@@ -137,6 +139,15 @@ export default function InvoicesPage() {
     if (numErr) errs.invoice_number = numErr;
     if (amtErr) errs.amount = amtErr;
     if (dateErr) errs.due_date = dateErr;
+    if (!form.currency) {
+      errs.currency = showCustomCurrency
+        ? form.currency.length < 2
+          ? "El código debe tener al menos 2 caracteres"
+          : "Ingresa el código de la moneda"
+        : "Selecciona una moneda";
+    } else if (showCustomCurrency && form.currency.length < 2) {
+      errs.currency = "El código debe tener al menos 2 caracteres";
+    }
 
     if (Object.keys(errs).length > 0) {
       setFormErrors(errs);
@@ -165,6 +176,7 @@ export default function InvoicesPage() {
       });
       setCreateOpen(false);
       setForm(EMPTY_FORM);
+      setShowCustomCurrency(false);
       toast.success("Factura creada correctamente");
       fetchInvoices();
     } catch (err) {
@@ -439,14 +451,39 @@ export default function InvoicesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
-                  <input
-                    type="text"
-                    maxLength={3}
-                    value={form.currency}
-                    onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
-                    className={inputCls()}
-                    placeholder="USD"
-                  />
+                  <select
+                    value={showCustomCurrency ? "OTHER" : form.currency}
+                    onChange={(e) => {
+                      if (e.target.value === "OTHER") {
+                        setShowCustomCurrency(true);
+                        setForm({ ...form, currency: "" });
+                      } else {
+                        setShowCustomCurrency(false);
+                        setForm({ ...form, currency: e.target.value });
+                      }
+                      setFormErrors((p) => ({ ...p, currency: undefined }));
+                    }}
+                    className={inputCls(formErrors.currency)}
+                  >
+                    <option value="">Seleccionar moneda</option>
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.label}</option>
+                    ))}
+                  </select>
+                  {showCustomCurrency && (
+                    <input
+                      type="text"
+                      maxLength={3}
+                      value={form.currency}
+                      onChange={(e) => {
+                        setForm({ ...form, currency: e.target.value.toUpperCase() });
+                        setFormErrors((p) => ({ ...p, currency: undefined }));
+                      }}
+                      className={`mt-2 ${inputCls(formErrors.currency)}`}
+                      placeholder="Ej: CHF, NOK, JPY..."
+                    />
+                  )}
+                  {formErrors.currency && <p className="mt-1 text-xs text-red-600">{formErrors.currency}</p>}
                 </div>
               </div>
 
@@ -503,7 +540,7 @@ export default function InvoicesPage() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); }}
+                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); setShowCustomCurrency(false); }}
                   className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                 >
                   Cancelar
