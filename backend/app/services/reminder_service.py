@@ -166,55 +166,63 @@ def process_pending_reminders(db: Session) -> None:
     )
 
     for invoice in active_invoices:
-        # Automatic reminders are a Pro feature — skip Free plan users
-        if invoice.user.plan == "free":
-            logger.info("skipped (free plan): invoice %s", invoice.invoice_number)
-            continue
+        try:
+            # Automatic reminders are a Pro feature — skip Free plan users
+            if invoice.user.plan == "free":
+                logger.info("skipped (free plan): invoice %s", invoice.invoice_number)
+                continue
 
-        days_since_due = (today - invoice.due_date).days
-        intervals: list[int] = invoice.reminder_config.get("intervals", [3, 7, 14])
+            days_since_due = (today - invoice.due_date).days
+            intervals: list[int] = invoice.reminder_config.get("intervals", [3, 7, 14])
 
-        if days_since_due not in intervals:
-            continue
+            if days_since_due not in intervals:
+                continue
 
-        if already_sent(invoice.id, days_since_due, db):
-            logger.info(
-                "skipped (already sent): invoice %s day %s",
-                invoice.invoice_number, days_since_due,
+            if already_sent(invoice.id, days_since_due, db):
+                logger.info(
+                    "skipped (already sent): invoice %s day %s",
+                    invoice.invoice_number, days_since_due,
+                )
+                continue
+
+            tone = get_tone_for_day(days_since_due)
+            subject, body = generate_email_content(
+                freelancer_name=invoice.user.full_name,
+                client_name=invoice.client.name,
+                amount=float(invoice.amount),
+                currency=invoice.currency,
+                invoice_number=invoice.invoice_number,
+                days_overdue=days_since_due,
+                tone=tone,
             )
-            continue
 
-        tone = get_tone_for_day(days_since_due)
-        subject, body = generate_email_content(
-            freelancer_name=invoice.user.full_name,
-            client_name=invoice.client.name,
-            amount=float(invoice.amount),
-            currency=invoice.currency,
-            invoice_number=invoice.invoice_number,
-            days_overdue=days_since_due,
-            tone=tone,
-        )
+            logger.info("Sending email to: %s", invoice.client.email)
+            success = send_email(invoice.client.email, subject, body)
 
-        logger.info("Sending email to: %s", invoice.client.email)
-        success = send_email(invoice.client.email, subject, body)
+            log = EmailLog(
+                invoice_id=invoice.id,
+                recipient_email=invoice.client.email,
+                reminder_day=days_since_due,
+                tone=tone,
+                status="sent" if success else "failed",
+                sent_at=datetime.now(timezone.utc),
+                subject=subject,
+                body=body,
+                error_message=None if success else "Email delivery failed",
+            )
+            db.add(log)
+            db.commit()
 
-        log = EmailLog(
-            invoice_id=invoice.id,
-            recipient_email=invoice.client.email,
-            reminder_day=days_since_due,
-            tone=tone,
-            status="sent" if success else "failed",
-            sent_at=datetime.now(timezone.utc),
-            subject=subject,
-            body=body,
-            error_message=None if success else "Email delivery failed",
-        )
-        db.add(log)
-        db.commit()
+            logger.info(
+                "%s: invoice %s -> %s (day %s, tone=%s)",
+                "sent" if success else "FAILED",
+                invoice.invoice_number, invoice.client.email,
+                days_since_due, tone,
+            )
 
-        logger.info(
-            "%s: invoice %s -> %s (day %s, tone=%s)",
-            "sent" if success else "FAILED",
-            invoice.invoice_number, invoice.client.email,
-            days_since_due, tone,
-        )
+        except Exception as e:
+            logger.error(
+                "ERROR processing invoice %s: %s",
+                invoice.invoice_number, e,
+            )
+            db.rollback()

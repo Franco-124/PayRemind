@@ -1,6 +1,10 @@
 import logging
 import sys
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,6 +14,7 @@ from app.routers import clients as clients_router
 from app.routers import email_logs as email_logs_router
 from app.routers import invoices as invoices_router
 from app.routers import webhooks as webhooks_router
+from app.scheduler.jobs import check_and_send_reminders
 
 # Force stdout to flush immediately — required for Railway log streaming
 logging.basicConfig(
@@ -19,7 +24,26 @@ logging.basicConfig(
     force=True,
 )
 
-app = FastAPI(title="PayRemind API")
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        check_and_send_reminders,
+        trigger=CronTrigger(hour=9, minute=0),
+        id="send_reminders",
+        replace_existing=True,
+    )
+    scheduler.start()
+    logger.info("Scheduler started — daily reminder job at 09:00 UTC")
+    yield
+    scheduler.shutdown()
+    logger.info("Scheduler stopped")
+
+
+app = FastAPI(title="PayRemind API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
