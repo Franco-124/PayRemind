@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *.pyo
 .env
-.venv
+.venv/
 venv/
+env/
+ENV/
 *.egg-info/
 
 # Node
