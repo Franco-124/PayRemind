@@ -166,6 +166,11 @@ def process_pending_reminders(db: Session) -> None:
     )
 
     for invoice in active_invoices:
+        # Automatic reminders are a Pro feature — skip Free plan users
+        if invoice.user.plan == "free":
+            logger.info("skipped (free plan): invoice %s", invoice.invoice_number)
+            continue
+
         days_since_due = (today - invoice.due_date).days
         intervals: list[int] = invoice.reminder_config.get("intervals", [3, 7, 14])
 

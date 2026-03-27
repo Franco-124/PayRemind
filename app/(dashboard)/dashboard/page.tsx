@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Clock, DollarSign, AlertCircle } from "lucide-react";
+import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 
 interface Invoice {
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userPlan, setUserPlan] = useState<"free" | "pro">("free");
 
   useEffect(() => {
     apiClient
@@ -36,6 +38,9 @@ export default function DashboardPage() {
       .then(setInvoices)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+    apiClient.get<{ plan: "free" | "pro" }>("/auth/me")
+      .then((me) => setUserPlan(me.plan))
+      .catch(() => {});
   }, []);
 
   const pending = invoices.filter((i) => i.status === "pending");
@@ -51,6 +56,7 @@ export default function DashboardPage() {
 
   const recent = invoices.slice(0, 5);
   const hasOverdue = overdue.length > 0;
+  const showFreeLimitBanner = userPlan === "free" && (pending.length + overdue.length) >= 3;
 
   return (
     <div className="space-y-6">
@@ -65,6 +71,29 @@ export default function DashboardPage() {
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {/* Free plan limit banner */}
+      {showFreeLimitBanner && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-indigo-600 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-indigo-900">
+                Has alcanzado el límite del plan Free
+              </p>
+              <p className="text-xs text-indigo-700 mt-0.5">
+                Tienes {pending.length + overdue.length} facturas activas. Upgrade a Pro para crear facturas ilimitadas.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/settings"
+            className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-all duration-150"
+          >
+            Upgrade a Pro
+          </Link>
         </div>
       )}
 

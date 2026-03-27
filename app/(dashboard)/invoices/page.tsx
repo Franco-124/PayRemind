@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle, Lock } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateRequired, validateAmount } from "@/app/lib/validations";
@@ -103,6 +103,7 @@ export default function InvoicesPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
+  const [userPlan, setUserPlan] = useState<"free" | "pro">("free");
   const [showCustomCurrency, setShowCustomCurrency] = useState(false);
   const [reminderToggleTouched, setReminderToggleTouched] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -127,7 +128,13 @@ export default function InvoicesPage() {
     } catch { /* non-blocking */ }
   }
 
-  useEffect(() => { fetchInvoices(); fetchClients(); }, []);
+  useEffect(() => {
+    fetchInvoices();
+    fetchClients();
+    apiClient.get<{ plan: "free" | "pro" }>("/auth/me")
+      .then((me) => setUserPlan(me.plan))
+      .catch(() => {});
+  }, []);
   useEffect(() => { setLoading(true); fetchInvoices(); }, [statusFilter]);
 
   async function handleCreate(e: React.FormEvent) {
@@ -543,16 +550,28 @@ export default function InvoicesPage() {
                 <div className="flex items-center gap-3 py-1">
                   <button
                     type="button"
+                    disabled={userPlan === "free"}
                     onClick={() => { setReminderToggleTouched(true); setForm({ ...form, reminder_active: !form.reminder_active }); }}
-                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${form.reminder_active ? "bg-indigo-600" : "bg-gray-300"}`}
+                    className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${userPlan === "free" || !form.reminder_active ? "bg-gray-300" : "bg-indigo-600"} disabled:cursor-not-allowed`}
                   >
-                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${form.reminder_active ? "translate-x-4" : "translate-x-0.5"}`} />
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 transition-transform ${userPlan !== "free" && form.reminder_active ? "translate-x-4" : "translate-x-0.5"}`} />
                   </button>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-gray-700 flex items-center gap-1.5">
                     Recordatorios automáticos <span className="text-gray-400">(días 3, 7 y 14)</span>
+                    {userPlan === "free" && <Lock className="w-3 h-3 text-gray-400" />}
                   </span>
                 </div>
-                {reminderToggleTouched && !form.reminder_active && (
+                {userPlan === "free" ? (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Lock className="w-3 h-3 text-gray-400 shrink-0" />
+                    <p className="text-xs text-gray-500">
+                      Los recordatorios automáticos requieren el{" "}
+                      <a href="/settings" className="text-indigo-600 hover:underline font-medium">
+                        Plan Pro — $12/mes
+                      </a>
+                    </p>
+                  </div>
+                ) : reminderToggleTouched && !form.reminder_active ? (
                   <div className="mt-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 flex gap-3">
                     <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
                     <p className="text-sm text-yellow-700">
@@ -560,7 +579,7 @@ export default function InvoicesPage() {
                       {" "}Deberás enviar los emails de cobro manualmente desde el detalle de cada factura.
                     </p>
                   </div>
-                )}
+                ) : null}
               </div>
 
               <div className="flex gap-3 pt-2">
