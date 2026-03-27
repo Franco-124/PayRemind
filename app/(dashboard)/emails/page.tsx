@@ -20,9 +20,9 @@ interface EmailLog {
 }
 
 const TONE_BADGE: Record<string, string> = {
-  friendly: "bg-blue-100 text-blue-700",
-  firm:     "bg-yellow-100 text-yellow-700",
-  final:    "bg-red-100 text-red-700",
+  friendly: "bg-blue-50 text-blue-700 border border-blue-200",
+  firm:     "bg-yellow-50 text-yellow-700 border border-yellow-200",
+  final:    "bg-red-50 text-red-700 border border-red-200",
 };
 
 const STATUS_BADGE: Record<string, { cls: string; label: string }> = {
@@ -73,11 +73,13 @@ export default function EmailsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Emails enviados</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Historial completo de recordatorios enviados a tus clientes
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Emails enviados</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Historial completo de recordatorios enviados a tus clientes
+          </p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -184,7 +186,7 @@ export default function EmailsPage() {
 
       {/* Detail modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-gray-900">Detalle del email</h2>

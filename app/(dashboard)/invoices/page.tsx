@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateRequired, validateAmount } from "@/app/lib/validations";
@@ -42,10 +43,10 @@ const STATUS_LABEL: Record<string, string> = {
   pending: "Pendiente", overdue: "Vencida", paid: "Pagada", cancelled: "Cancelada",
 };
 const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  overdue: "bg-red-100 text-red-800",
-  paid: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-100 text-gray-600",
+  pending:   "bg-yellow-50 text-yellow-700 border border-yellow-200",
+  overdue:   "bg-red-50 text-red-700 border border-red-200",
+  paid:      "bg-green-50 text-green-700 border border-green-200",
+  cancelled: "bg-gray-100 text-gray-600 border border-gray-200",
 };
 const TONE_LABEL: Record<string, string> = {
   friendly: "Amable", firm: "Firme", final: "Final",
@@ -254,8 +255,11 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Facturas</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Facturas</h1>
+          <p className="text-sm text-gray-500 mt-1">Seguimiento de cobros y recordatorios automáticos</p>
+        </div>
         {clients.length === 0 ? (
           <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
             <span>⚠️</span>
@@ -264,7 +268,7 @@ export default function InvoicesPage() {
         ) : (
           <button
             onClick={() => { setCreateOpen(true); setFormErrors({}); }}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all duration-150"
           >
             + Nueva factura
           </button>
@@ -298,7 +302,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="px-6 py-10 text-sm text-gray-400 text-center">Cargando...</div>
         ) : invoices.length === 0 ? (
@@ -333,8 +337,17 @@ export default function InvoicesPage() {
                           {STATUS_LABEL[inv.status]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                        {nextReminderLabel(inv)}
+                      <td className="px-4 py-4 text-xs whitespace-nowrap">
+                        {inv.status === "paid" || inv.status === "cancelled" ? (
+                          <span className="text-gray-400">—</span>
+                        ) : !inv.reminder_config.active ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 text-xs font-medium">⏸ Pausado</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-indigo-600 font-medium">
+                            <Clock className="w-3 h-3" />
+                            {nextReminderLabel(inv)}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -375,7 +388,7 @@ export default function InvoicesPage() {
 
       {/* Upgrade Modal */}
       {upgradeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
               <span className="text-2xl">🚀</span>
@@ -417,7 +430,7 @@ export default function InvoicesPage() {
 
       {/* Create Modal */}
       {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Nueva factura</h2>
 
@@ -560,7 +573,7 @@ export default function InvoicesPage() {
 
       {/* Detail Modal */}
       {(detailInvoice || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
             {detailLoading ? (
               <p className="text-sm text-gray-400 text-center py-8">Cargando...</p>

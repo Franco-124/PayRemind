@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 
 const CHECKOUT_URL = "https://payremind.lemonsqueezy.com/checkout/buy/69ade413-496f-479e-b5db-a1aa7314f163";
@@ -44,7 +45,11 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900">Ajustes</h1>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Ajustes</h1>
+        <p className="text-sm text-gray-500 mt-1">Administra tu cuenta y suscripción</p>
+      </div>
 
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -53,78 +58,89 @@ export default function SettingsPage() {
       )}
 
       {/* Account section */}
-      <section className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-100">
         <div className="px-6 py-4">
-          <h2 className="text-sm font-semibold text-gray-900">Mi cuenta</h2>
+          <h2 className="text-base font-semibold text-gray-900">Mi cuenta</h2>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Nombre</p>
-            <p className="mt-0.5 text-sm text-gray-900">{user?.full_name}</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nombre</p>
+            <p className="mt-1 text-sm text-gray-900">{user?.full_name}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-            <p className="mt-0.5 text-sm text-gray-900">{user?.email}</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</p>
+            <p className="mt-1 text-sm text-gray-900">{user?.email}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Plan</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Plan</p>
             <div className="mt-1">
               <span
-                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                   user?.plan === "pro"
-                    ? "bg-indigo-100 text-indigo-700"
-                    : "bg-gray-100 text-gray-600"
+                    ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
+                    : "bg-gray-100 text-gray-600 border border-gray-200"
                 }`}
               >
-                {user?.plan === "pro" ? "Pro" : "Free"}
+                {user?.plan === "pro" ? "PRO" : "Free"}
               </span>
             </div>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Miembro desde</p>
-            <p className="mt-0.5 text-sm text-gray-900">
-              {user?.created_at
-                ? new Date(user.created_at).toLocaleDateString("es")
-                : "—"}
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Miembro desde</p>
+            <p className="mt-1 text-sm text-gray-900">
+              {user?.created_at ? new Date(user.created_at).toLocaleDateString("es") : "—"}
             </p>
           </div>
         </div>
       </section>
 
       {/* Subscription section */}
-      <section className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-100">
         <div className="px-6 py-4">
-          <h2 className="text-sm font-semibold text-gray-900">Suscripción</h2>
+          <h2 className="text-base font-semibold text-gray-900">Suscripción</h2>
         </div>
         <div className="px-6 py-5">
           {user?.plan === "pro" ? (
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 font-bold text-sm">
-                ✓
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Plan Pro activo</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Disfrutás de recordatorios ilimitados y todas las funciones premium.
-                </p>
+            <div className={`rounded-xl border-2 border-indigo-200 bg-indigo-50 p-5`}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Plan Pro activo</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Disfrutás de recordatorios ilimitados y todas las funciones premium.
+                  </p>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Plan Free</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Actualizá a Pro para desbloquear recordatorios ilimitados y acceso prioritario.
-                </p>
+            <div className="rounded-xl border-2 border-dashed border-gray-200 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Plan Free</p>
+                  <p className="text-xs text-gray-500 mt-1 max-w-xs">
+                    Hasta 3 facturas activas. Actualizá a Pro para desbloquear recordatorios ilimitados y acceso prioritario.
+                  </p>
+                  <ul className="mt-3 space-y-1.5 text-xs text-gray-500">
+                    <li className="flex items-center gap-1.5"><span className="text-green-500">✓</span> 3 facturas activas</li>
+                    <li className="flex items-center gap-1.5"><span className="text-green-500">✓</span> Recordatorios manuales</li>
+                    <li className="flex items-center gap-1.5 text-gray-400"><span>✗</span> Recordatorios automáticos</li>
+                    <li className="flex items-center gap-1.5 text-gray-400"><span>✗</span> Facturas ilimitadas</li>
+                  </ul>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-2xl font-bold text-gray-900 mb-3">$12<span className="text-sm font-normal text-gray-500">/mes</span></p>
+                  <a
+                    href={CHECKOUT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-150 whitespace-nowrap"
+                  >
+                    Upgrade a Pro
+                  </a>
+                </div>
               </div>
-              <a
-                href={CHECKOUT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
-              >
-                Upgrade a Pro — $12/mes
-              </a>
             </div>
           )}
         </div>

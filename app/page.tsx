@@ -144,12 +144,16 @@ export default function LandingPage() {
       {/* HERO */}
       <section className="bg-gradient-to-b from-indigo-50 to-white px-4 sm:px-6 py-24 md:py-36 text-center">
         <div className="mx-auto max-w-4xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-4 py-1.5 text-xs font-medium text-indigo-700 mb-8">
-            <BellRing className="h-3.5 w-3.5" />
-            PayRemind
-          </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 leading-tight mb-6">
-            {t.hero.headline}
+          <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-medium px-3 py-1 rounded-full border border-indigo-200 mb-6">
+            <Zap className="w-3 h-3" />
+            Automated payment reminders
+          </span>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 leading-tight mb-6">
+            {lang === "en" ? (
+              <>Stop chasing clients who <span className="text-indigo-600">don&apos;t pay</span></>
+            ) : (
+              <>Deja de perseguir clientes que <span className="text-indigo-600">no pagan</span></>
+            )}
           </h1>
           <p className="mx-auto max-w-2xl text-lg md:text-xl text-gray-500 leading-relaxed mb-10">
             {t.hero.sub}
@@ -247,11 +251,11 @@ export default function LandingPage() {
               <p className="text-sm text-gray-500">{t.pricing.free.desc}</p>
             </div>
             {/* Pro tier */}
-            <div className="px-8 py-7 bg-indigo-50">
+            <div className="px-8 py-7 bg-indigo-50 relative">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-medium px-3 py-1 rounded-full">Most Popular</span>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-base font-semibold text-indigo-900">{t.pricing.pro.label}</span>
-                  <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-xs font-semibold text-white">Popular</span>
                 </div>
                 <span className="text-2xl font-bold text-indigo-700">{t.pricing.pro.price}</span>
               </div>

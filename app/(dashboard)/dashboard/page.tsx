@@ -19,10 +19,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  overdue: "bg-red-100 text-red-800",
-  paid: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-100 text-gray-600",
+  pending:   "bg-yellow-50 text-yellow-700 border border-yellow-200",
+  overdue:   "bg-red-50 text-red-700 border border-red-200",
+  paid:      "bg-green-50 text-green-700 border border-green-200",
+  cancelled: "bg-gray-100 text-gray-600 border border-gray-200",
 };
 
 export default function DashboardPage() {
@@ -41,7 +41,6 @@ export default function DashboardPage() {
   const pending = invoices.filter((i) => i.status === "pending");
   const overdue = invoices.filter((i) => i.status === "overdue");
 
-  // Group totals by currency — never mix amounts from different currencies
   const totalsByCurrency = [...pending, ...overdue].reduce<Record<string, number>>(
     (acc, i) => {
       acc[i.currency] = (acc[i.currency] ?? 0) + Number(i.amount);
@@ -51,10 +50,17 @@ export default function DashboardPage() {
   );
 
   const recent = invoices.slice(0, 5);
+  const hasOverdue = overdue.length > 0;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Resumen de tu actividad</p>
+        </div>
+      </div>
 
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -68,22 +74,18 @@ export default function DashboardPage() {
           label="Facturas pendientes"
           value={loading ? "—" : String(pending.length)}
           icon={Clock}
-          iconColor="text-yellow-600"
-          iconBg="bg-yellow-50"
+          iconColor="text-indigo-600"
+          iconBg="bg-indigo-50"
         />
         <SummaryCard
           label="Monto total pendiente"
           value={
-            loading ? (
-              <span className="text-2xl font-bold text-gray-900">—</span>
-            ) : Object.keys(totalsByCurrency).length === 0 ? (
-              <span className="text-2xl font-bold text-gray-900">$ 0</span>
-            ) : (
-              <div className="flex flex-col gap-0.5 mt-0.5">
+            loading ? "—" : Object.keys(totalsByCurrency).length === 0 ? "$ 0" : (
+              <div className="flex flex-col gap-0.5 mt-1">
                 {Object.entries(totalsByCurrency).map(([cur, amt]) => (
                   <div key={cur} className="flex items-baseline gap-1.5">
                     <span className="text-xs font-semibold text-indigo-500 uppercase tracking-wide">{cur}</span>
-                    <span className="text-xl font-bold text-gray-900">
+                    <span className="text-2xl font-bold text-gray-900">
                       {amt.toLocaleString("es", { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -92,8 +94,8 @@ export default function DashboardPage() {
             )
           }
           icon={DollarSign}
-          iconColor="text-indigo-600"
-          iconBg="bg-indigo-50"
+          iconColor="text-green-600"
+          iconBg="bg-green-50"
         />
         <SummaryCard
           label="Facturas vencidas"
@@ -101,19 +103,26 @@ export default function DashboardPage() {
           icon={AlertCircle}
           iconColor="text-red-600"
           iconBg="bg-red-50"
+          highlight={hasOverdue}
         />
       </div>
 
-      {/* Recent invoices table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Recent invoices */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-900">Últimas facturas</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Actividad reciente</h2>
         </div>
 
         {loading ? (
-          <div className="px-6 py-8 text-sm text-gray-400 text-center">Cargando...</div>
+          <div className="px-6 py-12 text-sm text-gray-400 text-center">Cargando...</div>
         ) : recent.length === 0 ? (
-          <div className="px-6 py-8 text-sm text-gray-400 text-center">No hay facturas aún.</div>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Clock className="w-5 h-5 text-gray-400" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Sin actividad reciente</h3>
+            <p className="text-sm text-gray-500">Creá tu primera factura para empezar.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -129,14 +138,14 @@ export default function DashboardPage() {
               <tbody className="divide-y divide-gray-100">
                 {recent.map((inv) => (
                   <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 font-medium text-gray-900 font-mono">{inv.invoice_number}</td>
-                    <td className="px-6 py-3 text-gray-700">{inv.client.name}</td>
-                    <td className="px-6 py-3 text-gray-700">
+                    <td className="px-6 py-4 font-mono font-medium text-gray-900">{inv.invoice_number}</td>
+                    <td className="px-6 py-4 text-gray-700">{inv.client.name}</td>
+                    <td className="px-6 py-4 text-gray-700">
                       {inv.currency} {Number(inv.amount).toLocaleString("es")}
                     </td>
-                    <td className="px-6 py-3 text-gray-600">{inv.due_date}</td>
-                    <td className="px-6 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[inv.status]}`}>
+                    <td className="px-6 py-4 text-gray-600">{inv.due_date}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[inv.status]}`}>
                         {STATUS_LABEL[inv.status]}
                       </span>
                     </td>
@@ -152,27 +161,26 @@ export default function DashboardPage() {
 }
 
 function SummaryCard({
-  label, value, icon: Icon, iconColor, iconBg,
+  label, value, icon: Icon, iconColor, iconBg, highlight,
 }: {
   label: string;
   value: React.ReactNode;
   icon: React.ElementType;
   iconColor: string;
   iconBg: string;
+  highlight?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-5 flex items-center gap-4">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${iconBg}`}>
+    <div className={`bg-white rounded-2xl border shadow-sm p-6 ${highlight ? "border-red-200" : "border-gray-200"}`}>
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconBg}`}>
         <Icon className={`h-5 w-5 ${iconColor}`} />
       </div>
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500 font-medium">{label}</p>
-        {typeof value === "string" ? (
-          <p className="mt-0.5 text-2xl font-bold text-gray-900">{value}</p>
-        ) : (
-          value
-        )}
-      </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-4">{label}</p>
+      {typeof value === "string" ? (
+        <p className={`mt-1 text-3xl font-bold ${highlight ? "text-red-600" : "text-gray-900"}`}>{value}</p>
+      ) : (
+        value
+      )}
     </div>
   );
 }
