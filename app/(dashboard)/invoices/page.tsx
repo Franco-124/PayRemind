@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Clock, AlertCircle, Lock, CheckCircle, PauseCircle,
-  PlayCircle, Send, History, Loader2,
+  PlayCircle, Send, History, Loader2, ChevronDown, ChevronUp, Info,
 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
@@ -13,6 +13,11 @@ import { CURRENCIES } from "@/app/lib/currencies";
 interface Client {
   id: string;
   name: string;
+  email_language: string;
+  email_tone: string;
+  email_treatment: string;
+  sender_name: string | null;
+  email_instructions: string | null;
 }
 
 interface EmailLog {
@@ -34,12 +39,14 @@ interface Invoice {
   status: "pending" | "overdue" | "paid" | "cancelled";
   description: string | null;
   reminder_config: { active: boolean; intervals: number[] };
+  email_config_override: Record<string, string> | null;
   created_at: string;
   client: Client;
 }
 
 interface InvoiceDetail extends Invoice {
   email_logs: EmailLog[];
+  email_config_override: Record<string, string> | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -112,6 +119,11 @@ export default function InvoicesPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [showEmailConfig, setShowEmailConfig] = useState(false);
+  const [emailOverride, setEmailOverride] = useState({
+    language: "es", tone: "semi-formal", treatment: "nombre",
+    sender_name: "", instructions: "",
+  });
 
   async function fetchInvoices() {
     try {
@@ -186,11 +198,20 @@ export default function InvoicesPage() {
         due_date: form.due_date,
         description: form.description || null,
         reminder_config: { intervals: [3, 7, 14], active: form.reminder_active },
+        email_config_override: showEmailConfig ? {
+          language: emailOverride.language,
+          tone: emailOverride.tone,
+          treatment: emailOverride.treatment,
+          sender_name: emailOverride.sender_name || null,
+          instructions: emailOverride.instructions || null,
+        } : null,
       });
       setCreateOpen(false);
       setForm(EMPTY_FORM);
       setShowCustomCurrency(false);
       setReminderToggleTouched(false);
+      setShowEmailConfig(false);
+      setEmailOverride({ language: "es", tone: "semi-formal", treatment: "nombre", sender_name: "", instructions: "" });
       toast.success("Factura creada correctamente");
       fetchInvoices();
     } catch (err) {
@@ -680,10 +701,94 @@ export default function InvoicesPage() {
                 ) : null}
               </div>
 
+              {/* Email override — optional, collapsible */}
+              <div className="border-t border-gray-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEmailConfig(!showEmailConfig)}
+                  className="flex items-center gap-2 w-full text-left text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  {showEmailConfig
+                    ? <ChevronUp className="w-4 h-4" />
+                    : <ChevronDown className="w-4 h-4" />
+                  }
+                  Personalizar emails para esta factura
+                  <span className="text-xs text-gray-400">(opcional — usa config del cliente por defecto)</span>
+                </button>
+
+                {showEmailConfig && (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+                      Esta configuración sobreescribe la del cliente solo para esta factura.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
+                        <select
+                          value={emailOverride.language}
+                          onChange={(e) => setEmailOverride({ ...emailOverride, language: e.target.value })}
+                          className={inputCls()}
+                        >
+                          <option value="es">🇪🇸 Español</option>
+                          <option value="en">🇺🇸 English</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tono base</label>
+                        <select
+                          value={emailOverride.tone}
+                          onChange={(e) => setEmailOverride({ ...emailOverride, tone: e.target.value })}
+                          className={inputCls()}
+                        >
+                          <option value="formal">Formal</option>
+                          <option value="semi-formal">Semi-formal</option>
+                          <option value="casual">Casual</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tratamiento</label>
+                        <select
+                          value={emailOverride.treatment}
+                          onChange={(e) => setEmailOverride({ ...emailOverride, treatment: e.target.value })}
+                          className={inputCls()}
+                        >
+                          <option value="nombre">Por su nombre</option>
+                          <option value="tu">De tú</option>
+                          <option value="usted">De usted</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del remitente</label>
+                        <input
+                          type="text"
+                          value={emailOverride.sender_name}
+                          onChange={(e) => setEmailOverride({ ...emailOverride, sender_name: e.target.value })}
+                          className={inputCls()}
+                          placeholder="Deja vacío para usar el del cliente"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Instrucciones adicionales</label>
+                      <textarea
+                        rows={2}
+                        value={emailOverride.instructions}
+                        onChange={(e) => setEmailOverride({ ...emailOverride, instructions: e.target.value })}
+                        className={inputCls()}
+                        maxLength={500}
+                        placeholder="Ej: Menciona que el proyecto fue excelente."
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); setShowCustomCurrency(false); setReminderToggleTouched(false); }}
+                  onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); setShowCustomCurrency(false); setReminderToggleTouched(false); setShowEmailConfig(false); setEmailOverride({ language: "es", tone: "semi-formal", treatment: "nombre", sender_name: "", instructions: "" }); }}
                   className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                 >
                   Cancelar
@@ -737,6 +842,47 @@ export default function InvoicesPage() {
                   </Dt>
                   {detailInvoice.description && <Dt label="Descripción" full>{detailInvoice.description}</Dt>}
                 </dl>
+
+                {/* Active email config */}
+                {(() => {
+                  const override = detailInvoice.email_config_override;
+                  const cl = detailInvoice.client;
+                  const config = {
+                    language:     override?.language     ?? cl.email_language,
+                    tone:         override?.tone         ?? cl.email_tone,
+                    treatment:    override?.treatment    ?? cl.email_treatment,
+                    sender_name:  override?.sender_name  ?? cl.sender_name ?? "—",
+                    instructions: override?.instructions ?? cl.email_instructions,
+                  };
+                  const langLabel = config.language === "es" ? "🇪🇸 Español" : "🇺🇸 English";
+                  return (
+                    <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                        Configuración de emails activa
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div><span className="text-gray-400">Idioma:</span><span className="text-gray-700 ml-1">{langLabel}</span></div>
+                        <div><span className="text-gray-400">Tono:</span><span className="text-gray-700 ml-1">{config.tone}</span></div>
+                        <div><span className="text-gray-400">Tratamiento:</span><span className="text-gray-700 ml-1">{config.treatment}</span></div>
+                        <div><span className="text-gray-400">Remitente:</span><span className="text-gray-700 ml-1">{config.sender_name}</span></div>
+                        {config.instructions && (
+                          <div className="col-span-2">
+                            <span className="text-gray-400">Instrucciones:</span>
+                            <span className="text-gray-700 ml-1">{config.instructions}</span>
+                          </div>
+                        )}
+                        {override && (
+                          <div className="col-span-2 mt-1">
+                            <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-600 text-xs px-2 py-0.5 rounded-full border border-indigo-200">
+                              <Info className="w-3 h-3" />
+                              Config personalizada para esta factura
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {(detailInvoice.status === "pending" || detailInvoice.status === "overdue") && (
                   <button

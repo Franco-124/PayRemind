@@ -20,6 +20,14 @@ class Client(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     company: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Email configuration
+    email_language: Mapped[str] = mapped_column(String(2), nullable=False, default="es")
+    email_tone: Mapped[str] = mapped_column(String(20), nullable=False, default="semi-formal")
+    email_treatment: Mapped[str] = mapped_column(String(20), nullable=False, default="nombre")
+    sender_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    email_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

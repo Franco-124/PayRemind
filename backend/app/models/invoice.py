@@ -36,6 +36,7 @@ class Invoice(Base):
     reminder_config: Mapped[dict] = mapped_column(
         JSONB, nullable=False, default=lambda: DEFAULT_REMINDER_CONFIG.copy()
     )
+    email_config_override: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

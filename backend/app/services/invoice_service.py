@@ -103,6 +103,7 @@ def create_invoice(user_id: str, data: InvoiceCreate, db: Session) -> Invoice:
         due_date=data.due_date,
         description=data.description,
         reminder_config=reminder_config,
+        email_config_override=data.email_config_override,
     )
     db.add(invoice)
     _commit(db)

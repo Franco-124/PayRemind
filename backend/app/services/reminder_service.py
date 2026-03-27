@@ -21,12 +21,29 @@ _SYSTEM_PROMPT = (
     "[cuerpo del email]"
 )
 
-_TONE_INSTRUCTIONS: dict[str, str] = {
-    "friendly": "Tono amable. Asume que fue un olvido y que el cliente pagará pronto.",
-    "firm": "Tono directo y profesional. Menciona explícitamente los días vencidos.",
+_TONE_BASE: dict[str, str] = {
+    "formal":      "Usa un lenguaje muy formal y profesional.",
+    "semi-formal": "Usa un lenguaje profesional pero cercano.",
+    "casual":      "Usa un lenguaje amigable y casual.",
+}
+
+_LANGUAGE: dict[str, str] = {
+    "es": "Escribe el email en español.",
+    "en": "Write the email in English.",
+}
+
+_ESCALATION_TONE: dict[str, str] = {
+    "friendly": (
+        "El pago tiene pocos días de retraso. "
+        "Asumir que fue un olvido. Sin presión."
+    ),
+    "firm": (
+        "El pago lleva varios días de retraso. "
+        "Ser directo pero respetuoso."
+    ),
     "final": (
-        "Tono serio. Indica que es un último recordatorio y menciona "
-        "que se tomarán próximos pasos si no se recibe el pago."
+        "El pago lleva mucho tiempo de retraso. "
+        "Tono serio. Indicar próximos pasos."
     ),
 }
 
@@ -34,6 +51,28 @@ _TONE_INSTRUCTIONS: dict[str, str] = {
 def get_tone_for_day(days_overdue: int) -> str:
     """Map a days-overdue value to a tone string."""
     return _TONE_MAP.get(days_overdue, "firm")
+
+
+def get_email_config(invoice: Invoice) -> dict:
+    """
+    Build the effective email config for an invoice.
+    Per-invoice override takes priority over client defaults.
+    Falls back to user's full_name when no sender_name is set.
+    """
+    config = {
+        "language":     invoice.client.email_language,
+        "tone":         invoice.client.email_tone,
+        "treatment":    invoice.client.email_treatment,
+        "sender_name":  invoice.client.sender_name or invoice.user.full_name,
+        "instructions": invoice.client.email_instructions,
+    }
+
+    if invoice.email_config_override:
+        config.update(invoice.email_config_override)
+        if not config.get("sender_name"):
+            config["sender_name"] = invoice.user.full_name
+
+    return config
 
 
 def generate_email_content(
@@ -44,11 +83,23 @@ def generate_email_content(
     invoice_number: str,
     days_overdue: int,
     tone: str,
+    config: Optional[dict] = None,
 ) -> tuple[str, str]:
     """Generate email subject and body using GPT-4o-mini.
 
     Falls back to a generic template if the OpenAI call fails.
+    config contains language, tone, treatment, sender_name, instructions.
+    When config is None, uses sensible Spanish defaults.
     """
+    if config is None:
+        config = {
+            "language": "es",
+            "tone": "semi-formal",
+            "treatment": "nombre",
+            "sender_name": freelancer_name,
+            "instructions": None,
+        }
+
     fallback_subject = f"Recordatorio de pago pendiente - {invoice_number}"
     fallback_body = (
         f"Hola {client_name}, te recordamos que la factura {invoice_number} "
@@ -58,25 +109,44 @@ def generate_email_content(
 
     try:
         from openai import OpenAI  # lazy import — avoids proxy resolution at startup
-        client = OpenAI(api_key=settings.openai_api_key)
-        tone_instruction = _TONE_INSTRUCTIONS.get(tone, _TONE_INSTRUCTIONS["firm"])
-        user_prompt = (
-            f"Redacta un email de cobro con los siguientes datos:\n"
-            f"- Freelancer: {freelancer_name}\n"
-            f"- Cliente: {client_name}\n"
-            f"- Factura: {invoice_number}\n"
-            f"- Monto: {amount} {currency}\n"
-            f"- Días vencida: {days_overdue}\n"
-            f"- Tono: {tone_instruction}\n\n"
-            "Reglas:\n"
-            "- Máximo 5 oraciones en el cuerpo\n"
-            "- Incluye un call to action claro al final\n"
-            "- NO sonar amenazante ni desesperado\n"
-            "- Firma con el nombre del freelancer"
+        openai_client = OpenAI(api_key=settings.openai_api_key)
+
+        sender = config.get("sender_name") or freelancer_name
+        language_key = config.get("language", "es")
+        tone_base_key = config.get("tone", "semi-formal")
+        treatment_key = config.get("treatment", "nombre")
+        extra_instructions = config.get("instructions") or ""
+
+        treatment_str = (
+            f"Llama al cliente por su nombre: {client_name}."
+            if treatment_key == "nombre"
+            else "Trata al cliente de tú."
+            if treatment_key == "tu"
+            else "Trata al cliente de usted."
         )
 
+        user_prompt = (
+            f"Redacta un email de cobro con estas especificaciones:\n\n"
+            f"REMITENTE: {sender}\n"
+            f"CLIENTE: {client_name}\n"
+            f"FACTURA: {invoice_number}\n"
+            f"MONTO: {amount} {currency}\n"
+            f"DÍAS VENCIDA: {days_overdue}\n\n"
+            f"INSTRUCCIONES DE ESTILO:\n"
+            f"- {_LANGUAGE.get(language_key, _LANGUAGE['es'])}\n"
+            f"- {_TONE_BASE.get(tone_base_key, _TONE_BASE['semi-formal'])}\n"
+            f"- {treatment_str}\n"
+            f"- {_ESCALATION_TONE.get(tone, _ESCALATION_TONE['firm'])}\n"
+            f"- Máximo 5 oraciones\n"
+            f"- Call to action claro al final\n"
+            f"- Firma con el nombre: {sender}\n"
+        )
+
+        if extra_instructions:
+            user_prompt += f"\nINSTRUCCIONES ADICIONALES: {extra_instructions}\n"
+
         logger.info("Generating email for invoice %s, tone: %s", invoice_number, tone)
-        response = client.chat.completions.create(
+        response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": _SYSTEM_PROMPT},
@@ -167,7 +237,6 @@ def process_pending_reminders(db: Session) -> None:
 
     for invoice in active_invoices:
         try:
-            # Automatic reminders are a Pro feature — skip Free plan users
             if invoice.user.plan == "free":
                 logger.info("skipped (free plan): invoice %s", invoice.invoice_number)
                 continue
@@ -186,6 +255,7 @@ def process_pending_reminders(db: Session) -> None:
                 continue
 
             tone = get_tone_for_day(days_since_due)
+            config = get_email_config(invoice)
             subject, body = generate_email_content(
                 freelancer_name=invoice.user.full_name,
                 client_name=invoice.client.name,
@@ -194,6 +264,7 @@ def process_pending_reminders(db: Session) -> None:
                 invoice_number=invoice.invoice_number,
                 days_overdue=days_since_due,
                 tone=tone,
+                config=config,
             )
 
             logger.info("Sending email to: %s", invoice.client.email)

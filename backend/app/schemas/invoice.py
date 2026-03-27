@@ -20,16 +20,17 @@ class InvoiceCreate(BaseModel):
     client_id: str
     invoice_number: str
     amount: Decimal = Field(gt=0)
-    currency: str = Field(default="USD", min_length=3, max_length=3)
+    currency: str = Field(default="USD", min_length=2, max_length=10)
     due_date: date
     description: Optional[str] = None
     reminder_config: Optional[ReminderConfig] = None
+    email_config_override: Optional[dict] = None
 
 
 class InvoiceUpdate(BaseModel):
     invoice_number: Optional[str] = None
     amount: Optional[Decimal] = Field(default=None, gt=0)
-    currency: Optional[str] = Field(default=None, min_length=3, max_length=3)
+    currency: Optional[str] = Field(default=None, min_length=2, max_length=10)
     due_date: Optional[date] = None
     description: Optional[str] = None
     reminder_config: Optional[ReminderConfig] = None
@@ -59,6 +60,7 @@ class InvoiceResponse(BaseModel):
     status: str
     description: Optional[str]
     reminder_config: dict
+    email_config_override: Optional[dict]
     created_at: datetime
     client: ClientResponse
     email_logs: list[EmailLogResponse] = []

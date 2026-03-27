@@ -99,7 +99,7 @@ def send_reminder(
     from datetime import date
     from sqlalchemy.orm import joinedload
     from app.models.invoice import Invoice
-    from app.services.reminder_service import get_tone_for_day, generate_email_content
+    from app.services.reminder_service import get_tone_for_day, generate_email_content, get_email_config
     from app.services.email_service import send_email
     from app.models.email_log import EmailLog
     from datetime import datetime, timezone
@@ -118,6 +118,7 @@ def send_reminder(
     days_since_due = max((today - invoice.due_date).days, 0)
     tone = get_tone_for_day(days_since_due)
 
+    config = get_email_config(invoice)
     subject, body = generate_email_content(
         freelancer_name=current_user.full_name,
         client_name=invoice.client.name,
@@ -126,6 +127,7 @@ def send_reminder(
         invoice_number=invoice.invoice_number,
         days_overdue=days_since_due,
         tone=tone,
+        config=config,
     )
 
     success = send_email(invoice.client.email, subject, body)
