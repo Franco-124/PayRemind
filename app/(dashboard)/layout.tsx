@@ -114,8 +114,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Footer — theme + avatar + logout */}
           <div className="px-3 py-4 border-t border-gray-800 dark:border-slate-700 space-y-3">
             <div>
-              <p className="text-xs text-gray-500 dark:text-slate-500 mb-2 px-1">Tema</p>
-              <ThemeSelector />
+              <p className="text-xs text-gray-500 dark:text-slate-400 mb-2 px-1">Tema</p>
+              <ThemeSelector variant="sidebar" />
             </div>
             <div>
               <div className="flex items-center gap-3 px-3 py-2">

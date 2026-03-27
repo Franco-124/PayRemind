@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { BellRing, Zap, Brain, Shield, Menu, X } from "lucide-react";
+import { ThemeSelector } from "@/app/components/ui/theme-selector";
 
 const copy = {
   en: {
@@ -93,16 +94,16 @@ const featureIcons = [Zap, Brain, Shield];
 
 function LangToggle({ lang, setLang }: { lang: "en" | "es"; setLang: (l: "en" | "es") => void }) {
   return (
-    <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-xs font-medium">
+    <div className="flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-0.5 text-xs font-medium">
       <button
         onClick={() => setLang("en")}
-        className={`rounded-full px-3 py-1 transition ${lang === "en" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+        className={`rounded-full px-3 py-1 transition ${lang === "en" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
       >
         EN
       </button>
       <button
         onClick={() => setLang("es")}
-        className={`rounded-full px-3 py-1 transition ${lang === "es" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+        className={`rounded-full px-3 py-1 transition ${lang === "es" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
       >
         ES
       </button>
@@ -116,25 +117,26 @@ export default function LandingPage() {
   const t = copy[lang];
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white overflow-x-hidden">
 
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
+      <nav className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-100 dark:border-gray-800">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
               <BellRing className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-gray-900">PayRemind</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">PayRemind</span>
           </Link>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeSelector />
             <LangToggle lang={lang} setLang={setLang} />
             <Link
               href="/login"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+              className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition"
             >
               {t.nav.login}
             </Link>
@@ -156,7 +158,7 @@ export default function LandingPage() {
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -166,18 +168,22 @@ export default function LandingPage() {
 
         {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
+          <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg">
             <div className="px-4 py-4 space-y-3">
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-3 text-base font-medium text-gray-700 hover:text-indigo-600 transition border-b border-gray-100"
+                className="block py-3 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition border-b border-gray-100 dark:border-gray-800"
               >
                 {t.nav.login}
               </Link>
               <div className="py-2">
-                <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide font-medium">Idioma</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide font-medium">Idioma</p>
                 <LangToggle lang={lang} setLang={(l) => { setLang(l); setMobileMenuOpen(false); }} />
+              </div>
+              <div className="py-2">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide font-medium">Tema</p>
+                <ThemeSelector />
               </div>
             </div>
           </div>
@@ -185,20 +191,20 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section className="bg-gradient-to-b from-indigo-50 to-white px-6 py-16 md:py-36 text-center">
+      <section className="bg-gradient-to-b from-indigo-50 dark:from-gray-800 to-white dark:to-gray-900 px-6 py-16 md:py-36 text-center">
         <div className="mx-auto max-w-4xl">
-          <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-medium px-3 py-1 rounded-full border border-indigo-200 mb-6">
+          <span className="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-medium px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 mb-6">
             <Zap className="w-3 h-3 shrink-0" />
             Automated payment reminders
           </span>
-          <h1 className="text-4xl md:text-7xl font-bold tracking-tight text-gray-900 leading-tight mb-6">
+          <h1 className="text-4xl md:text-7xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight mb-6">
             {lang === "en" ? (
               <>Stop chasing clients who <span className="text-indigo-600">don&apos;t pay</span></>
             ) : (
               <>Deja de perseguir clientes que <span className="text-indigo-600">no pagan</span></>
             )}
           </h1>
-          <p className="mx-auto max-w-2xl text-base md:text-xl text-gray-500 leading-relaxed mb-10 px-2">
+          <p className="mx-auto max-w-2xl text-base md:text-xl text-gray-500 dark:text-gray-300 leading-relaxed mb-10 px-2">
             {t.hero.sub}
           </p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
@@ -210,7 +216,7 @@ export default function LandingPage() {
             </Link>
             <a
               href="#how"
-              className="w-full md:w-auto min-h-[44px] rounded-xl border border-gray-200 bg-white px-8 py-4 text-base font-semibold text-gray-700 hover:bg-gray-50 transition flex items-center justify-center"
+              className="w-full md:w-auto min-h-[44px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-8 py-4 text-base font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center"
             >
               {t.hero.cta2} ↓
             </a>
@@ -219,12 +225,12 @@ export default function LandingPage() {
       </section>
 
       {/* SOCIAL PROOF */}
-      <section className="bg-gray-50 border-y border-gray-100 px-6 py-10">
+      <section className="bg-gray-50 dark:bg-gray-800 border-y border-gray-100 dark:border-gray-700 px-6 py-10">
         <div className="mx-auto max-w-4xl text-center">
-          <p className="text-sm font-medium text-gray-500 mb-6">{t.proof.label}</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-6">{t.proof.label}</p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-16">
             {t.proof.stats.map((stat) => (
-              <span key={stat} className="text-base font-semibold text-gray-800">
+              <span key={stat} className="text-base font-semibold text-gray-800 dark:text-gray-200">
                 {stat}
               </span>
             ))}
@@ -235,7 +241,7 @@ export default function LandingPage() {
       {/* HOW IT WORKS */}
       <section id="how" className="px-6 py-16 md:py-24">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 dark:text-white mb-12 md:mb-16">
             {t.how.title}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -244,8 +250,8 @@ export default function LandingPage() {
                 <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white text-lg font-bold shadow-lg">
                   {i + 1}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{step.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-300 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -253,9 +259,9 @@ export default function LandingPage() {
       </section>
 
       {/* FEATURES */}
-      <section className="bg-gray-50 px-6 py-16 md:py-24">
+      <section className="bg-gray-50 dark:bg-gray-800 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 dark:text-white mb-12 md:mb-16">
             {t.features.title}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -264,13 +270,13 @@ export default function LandingPage() {
               return (
                 <div
                   key={i}
-                  className="rounded-2xl bg-white border border-gray-200 p-5 md:p-7 shadow-sm hover:shadow-md transition"
+                  className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 md:p-7 shadow-sm hover:shadow-md transition"
                 >
-                  <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50">
-                    <Icon className="h-5 w-5 text-indigo-600" />
+                  <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/30">
+                    <Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-2">{card.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{card.desc}</p>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">{card.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 leading-relaxed">{card.desc}</p>
                 </div>
               );
             })}
@@ -281,26 +287,26 @@ export default function LandingPage() {
       {/* PRICING */}
       <section className="px-6 py-16 md:py-24">
         <div className="mx-auto max-w-lg text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-10 md:mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-10 md:mb-12">
             {t.pricing.title}
           </h2>
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
             {/* Free tier */}
-            <div className="px-6 md:px-8 py-7 border-b border-gray-100">
+            <div className="px-6 md:px-8 py-7 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-base font-semibold text-gray-900">{t.pricing.free.label}</span>
-                <span className="text-2xl font-bold text-gray-900">$0</span>
+                <span className="text-base font-semibold text-gray-900 dark:text-white">{t.pricing.free.label}</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">$0</span>
               </div>
-              <p className="text-sm text-gray-500">{t.pricing.free.desc}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300">{t.pricing.free.desc}</p>
             </div>
             {/* Pro tier */}
-            <div className="px-6 md:px-8 py-7 bg-indigo-50 relative">
+            <div className="px-6 md:px-8 py-7 bg-indigo-50 dark:bg-indigo-900/30 relative">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">Most Popular</span>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-base font-semibold text-indigo-900">{t.pricing.pro.label}</span>
-                <span className="text-2xl font-bold text-indigo-700">{t.pricing.pro.price}</span>
+                <span className="text-base font-semibold text-indigo-900 dark:text-indigo-300">{t.pricing.pro.label}</span>
+                <span className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{t.pricing.pro.price}</span>
               </div>
-              <p className="text-sm text-indigo-700">{t.pricing.pro.desc}</p>
+              <p className="text-sm text-indigo-700 dark:text-indigo-400">{t.pricing.pro.desc}</p>
             </div>
             {/* CTA */}
             <div className="px-6 md:px-8 py-6">
@@ -332,7 +338,7 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-gray-900 px-6 py-10">
+      <footer className="bg-gray-900 dark:bg-gray-950 border-t border-gray-800 px-6 py-10">
         <div className="mx-auto max-w-6xl flex flex-col items-center gap-6 md:flex-row md:justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
