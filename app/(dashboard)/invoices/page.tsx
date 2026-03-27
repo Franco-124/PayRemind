@@ -164,11 +164,11 @@ export default function InvoicesPage() {
     }
     setFormErrors({});
 
-    // Warn if due date is in the past
+    // Warn if due date is in the past — only for Pro users with reminders active
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = new Date(form.due_date + "T00:00:00");
-    if (due < today) {
+    if (due < today && userPlan === "pro" && form.reminder_active) {
       toast.warning("La fecha de vencimiento ya pasó. Los recordatorios iniciarán inmediatamente.");
     }
 
