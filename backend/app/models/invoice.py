@@ -25,7 +25,7 @@ class Invoice(Base):
     )
     invoice_number: Mapped[str] = mapped_column(String(100), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    currency: Mapped[str] = mapped_column(String(10), nullable=False, default="USD")
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(
         Enum("pending", "overdue", "paid", "cancelled", name="invoice_status"),

@@ -1,10 +1,13 @@
 import hashlib
 import hmac
+import logging
 
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 
 def verify_webhook_signature(payload: bytes, signature: str) -> bool:
@@ -14,7 +17,7 @@ def verify_webhook_signature(payload: bytes, signature: str) -> bool:
     alters the byte sequence and breaks the signature check.
     """
     if not settings.lemon_squeezy_webhook_secret:
-        print("[subscription_service] WARNING: webhook secret not configured")
+        logger.warning("webhook secret not configured")
         return False
 
     expected = hmac.new(
@@ -37,79 +40,69 @@ def handle_subscription_created(data: dict, db: Session) -> None:
         )
         subscription_id = str(data.get("data", {}).get("id", ""))
 
-        print(
-            f"[subscription_service] subscription_created "
-            f"| email={customer_email} | id={subscription_id}"
+        logger.info(
+            "subscription_created | email=%s | id=%s",
+            customer_email, subscription_id,
         )
 
         if not customer_email:
-            print("[subscription_service] no email found in payload — skipping")
+            logger.info("no email found in payload — skipping")
             return
 
         user = db.query(User).filter(User.email == customer_email).first()
         if not user:
-            print(f"[subscription_service] user not found: {customer_email}")
+            logger.info("user not found: %s", customer_email)
             return
 
         user.plan = "pro"
         user.lemon_squeezy_id = subscription_id
         db.commit()
-        print(f"[subscription_service] upgraded to pro: {customer_email}")
+        logger.info("upgraded to pro: %s", customer_email)
 
     except Exception as e:
         db.rollback()
-        print(f"[subscription_service] ERROR in handle_subscription_created: {e}")
+        logger.error("ERROR in handle_subscription_created: %s", e)
 
 
 def handle_subscription_cancelled(data: dict, db: Session) -> None:
     """Downgrade user to 'free' when a subscription is cancelled."""
     try:
         subscription_id = str(data.get("data", {}).get("id", ""))
-        print(
-            f"[subscription_service] subscription_cancelled | id={subscription_id}"
-        )
+        logger.info("subscription_cancelled | id=%s", subscription_id)
 
         user = (
             db.query(User).filter(User.lemon_squeezy_id == subscription_id).first()
         )
         if not user:
-            print(
-                f"[subscription_service] no user found for "
-                f"lemon_squeezy_id={subscription_id}"
-            )
+            logger.info("no user found for lemon_squeezy_id=%s", subscription_id)
             return
 
         user.plan = "free"
         db.commit()
-        print(f"[subscription_service] downgraded to free: {user.email}")
+        logger.info("downgraded to free: %s", user.email)
 
     except Exception as e:
         db.rollback()
-        print(f"[subscription_service] ERROR in handle_subscription_cancelled: {e}")
+        logger.error("ERROR in handle_subscription_cancelled: %s", e)
 
 
 def handle_subscription_expired(data: dict, db: Session) -> None:
     """Downgrade user to 'free' when a subscription expires."""
     try:
         subscription_id = str(data.get("data", {}).get("id", ""))
-        print(
-            f"[subscription_service] subscription_expired | id={subscription_id}"
-        )
+        logger.info("subscription_expired | id=%s", subscription_id)
 
         user = (
             db.query(User).filter(User.lemon_squeezy_id == subscription_id).first()
         )
         if not user:
-            print(
-                f"[subscription_service] no user found for "
-                f"lemon_squeezy_id={subscription_id}"
-            )
+            logger.info("no user found for lemon_squeezy_id=%s", subscription_id)
             return
 
         user.plan = "free"
         db.commit()
-        print(f"[subscription_service] downgraded to free: {user.email}")
+        logger.info("downgraded to free: %s", user.email)
 
     except Exception as e:
         db.rollback()
-        print(f"[subscription_service] ERROR in handle_subscription_expired: {e}")
+        logger.error("ERROR in handle_subscription_expired: %s", e)
