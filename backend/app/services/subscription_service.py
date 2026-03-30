@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import json
 import logging
 
 from sqlalchemy.orm import Session
@@ -20,48 +21,73 @@ def verify_webhook_signature(payload: bytes, signature: str) -> bool:
         logger.warning("webhook secret not configured")
         return False
 
-    expected = hmac.new(
-        settings.lemon_squeezy_webhook_secret.encode(),
-        payload,
-        hashlib.sha256,
-    ).hexdigest()
+    if not signature:
+        logger.warning("no signature provided")
+        return False
 
-    return hmac.compare_digest(expected, signature)
+    try:
+        expected = hmac.new(
+            key=settings.lemon_squeezy_webhook_secret.encode("utf-8"),
+            msg=payload,
+            digestmod=hashlib.sha256,
+        ).hexdigest()
+
+        result = hmac.compare_digest(expected, signature)
+
+        if not result:
+            logger.warning(
+                "signature mismatch | expected_prefix=%s | received_prefix=%s",
+                expected[:8],
+                signature[:8],
+            )
+
+        return result
+
+    except Exception as e:
+        logger.error("ERROR verifying webhook signature: %s", e)
+        return False
 
 
 def handle_subscription_created(data: dict, db: Session) -> None:
     """Upgrade user to 'pro' when a subscription is created."""
     try:
+        logger.info("FULL PAYLOAD subscription_created: %s", json.dumps(data, indent=2))
+
         attributes = data.get("data", {}).get("attributes", {})
         customer_email = (
             attributes.get("user_email")
             or attributes.get("customer_email")
+            or attributes.get("email")
             or data.get("meta", {}).get("custom_data", {}).get("email")
         )
         subscription_id = str(data.get("data", {}).get("id", ""))
 
         logger.info(
-            "subscription_created | email=%s | id=%s",
-            customer_email, subscription_id,
+            "subscription_created | email=%s | id=%s | available_keys=%s",
+            customer_email,
+            subscription_id,
+            list(attributes.keys()),
         )
 
         if not customer_email:
-            logger.info("no email found in payload — skipping")
+            logger.error(
+                "NO EMAIL FOUND in payload. Full attributes: %s", attributes
+            )
             return
 
         user = db.query(User).filter(User.email == customer_email).first()
         if not user:
-            logger.info("user not found: %s", customer_email)
+            logger.error("USER NOT FOUND for email: %s", customer_email)
             return
 
         user.plan = "pro"
         user.lemon_squeezy_id = subscription_id
         db.commit()
-        logger.info("upgraded to pro: %s", customer_email)
+        logger.info("SUCCESS: upgraded to pro: %s", customer_email)
 
     except Exception as e:
         db.rollback()
-        logger.error("ERROR in handle_subscription_created: %s", e)
+        logger.error("ERROR in handle_subscription_created: %s", e, exc_info=True)
 
 
 def handle_subscription_cancelled(data: dict, db: Session) -> None:
