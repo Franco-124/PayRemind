@@ -545,7 +545,7 @@ export default function InvoicesPage() {
                 Ahora no
               </button>
               <a
-                href="https://payremind.lemonsqueezy.com/checkout/buy/69ade413-496f-479e-b5db-a1aa7314f163"
+                href={process.env.NEXT_PUBLIC_CHECKOUT_URL || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition text-center"
