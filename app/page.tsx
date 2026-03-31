@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { BellRing, Zap, Brain, Shield, Menu, X } from "lucide-react";
 import { ThemeSelector } from "@/app/components/ui/theme-selector";
+import { LanguageToggle } from "@/app/components/ui/language-toggle";
+import { useLanguage } from "@/app/contexts/language-context";
 
 const copy = {
   en: {
@@ -92,29 +94,11 @@ const copy = {
 
 const featureIcons = [Zap, Brain, Shield];
 
-function LangToggle({ lang, setLang }: { lang: "en" | "es"; setLang: (l: "en" | "es") => void }) {
-  return (
-    <div className="flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-0.5 text-xs font-medium">
-      <button
-        onClick={() => setLang("en")}
-        className={`rounded-full px-3 py-1 transition ${lang === "en" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
-      >
-        EN
-      </button>
-      <button
-        onClick={() => setLang("es")}
-        className={`rounded-full px-3 py-1 transition ${lang === "es" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
-      >
-        ES
-      </button>
-    </div>
-  );
-}
-
 export default function LandingPage() {
-  const [lang, setLang] = useState<"en" | "es">("es");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { language, setLanguage } = useLanguage();
+  const lang = language;
   const t = copy[lang];
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white overflow-x-hidden">
@@ -133,7 +117,7 @@ export default function LandingPage() {
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeSelector />
-            <LangToggle lang={lang} setLang={setLang} />
+            <LanguageToggle />
             <Link
               href="/login"
               className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition"
@@ -148,7 +132,7 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* Mobile nav: CTA + hamburger */}
+          {/* Mobile nav */}
           <div className="flex md:hidden items-center gap-2">
             <Link
               href="/register"
@@ -166,7 +150,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile dropdown menu */}
+        {/* Mobile dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg">
             <div className="px-4 py-4 space-y-3">
@@ -179,7 +163,7 @@ export default function LandingPage() {
               </Link>
               <div className="py-2">
                 <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide font-medium">Idioma</p>
-                <LangToggle lang={lang} setLang={(l) => { setLang(l); setMobileMenuOpen(false); }} />
+                <LanguageToggle />
               </div>
               <div className="py-2">
                 <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide font-medium">Tema</p>
@@ -291,7 +275,6 @@ export default function LandingPage() {
             {t.pricing.title}
           </h2>
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
-            {/* Free tier */}
             <div className="px-6 md:px-8 py-7 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-base font-semibold text-gray-900 dark:text-white">{t.pricing.free.label}</span>
@@ -299,7 +282,6 @@ export default function LandingPage() {
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-300">{t.pricing.free.desc}</p>
             </div>
-            {/* Pro tier */}
             <div className="px-6 md:px-8 py-7 bg-indigo-50 dark:bg-indigo-900/30 relative">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap">Most Popular</span>
               <div className="flex items-center justify-between mb-2">
@@ -308,7 +290,6 @@ export default function LandingPage() {
               </div>
               <p className="text-sm text-indigo-700 dark:text-indigo-400">{t.pricing.pro.desc}</p>
             </div>
-            {/* CTA */}
             <div className="px-6 md:px-8 py-6">
               <Link
                 href="/register"
