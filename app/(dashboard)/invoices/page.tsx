@@ -10,6 +10,7 @@ import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateRequired, validateAmount } from "@/app/lib/validations";
 import { CURRENCIES } from "@/app/lib/currencies";
 import { useRequireAuth } from "@/app/hooks/useRequireAuth";
+import { useLanguage } from "@/app/contexts/language-context";
 
 interface Client {
   id: string;
@@ -50,8 +51,9 @@ interface InvoiceDetail extends Invoice {
   email_config_override: Record<string, string> | null;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente", overdue: "Vencida", paid: "Pagada", cancelled: "Cancelada",
+const STATUS_LABEL_KEY: Record<string, string> = {
+  pending: "invoices.filter.pending", overdue: "invoices.filter.overdue",
+  paid: "invoices.filter.paid", cancelled: "invoices.filter.cancelled",
 };
 const STATUS_COLOR: Record<string, string> = {
   pending:   "bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
@@ -59,8 +61,8 @@ const STATUS_COLOR: Record<string, string> = {
   paid:      "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
   cancelled: "bg-gray-100 text-gray-600 border border-gray-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600",
 };
-const TONE_LABEL: Record<string, string> = {
-  friendly: "Amable", firm: "Firme", final: "Final",
+const TONE_LABEL_KEY: Record<string, string> = {
+  friendly: "emails.tone.friendly", firm: "emails.tone.firm", final: "emails.tone.final",
 };
 
 interface CreateForm {
@@ -101,6 +103,7 @@ function nextReminderLabel(inv: Invoice): string {
 export default function InvoicesPage() {
   useRequireAuth();
   const toast = useToastContext();
+  const { t } = useLanguage();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -305,20 +308,20 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Facturas</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Seguimiento de cobros y recordatorios automáticos</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t("invoices.title")}</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{t("invoices.subtitle")}</p>
         </div>
         {clients.length === 0 ? (
           <div className="flex items-center gap-2 rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-400">
             <span>⚠️</span>
-            <span>Primero debés <a href="/clients" className="font-semibold underline hover:text-yellow-900 dark:hover:text-yellow-300">registrar un cliente</a> para crear facturas.</span>
+            <span>{t("invoices.no_client_warning")}</span>
           </div>
         ) : (
           <button
             onClick={() => { setCreateOpen(true); setFormErrors({}); }}
             className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all duration-150"
           >
-            + Nueva factura
+            {t("invoices.new")}
           </button>
         )}
       </div>
@@ -326,10 +329,7 @@ export default function InvoicesPage() {
       {/* Info banner */}
       <div className="flex items-start gap-3 rounded-lg border border-indigo-100 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
         <span className="mt-0.5 shrink-0">ℹ️</span>
-        <span>
-          Los recordatorios se envían automáticamente a las <strong>9:00 AM UTC</strong> en los días <strong>3, 7 y 14</strong> después del vencimiento.
-          Marcá una factura como pagada para detenerlos.
-        </span>
+        <span>{t("invoices.info_banner")}</span>
       </div>
 
       {/* Filter */}
@@ -344,7 +344,7 @@ export default function InvoicesPage() {
                 : "bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700"
             }`}
           >
-            {s === "" ? "Todos" : STATUS_LABEL[s]}
+            {s === "" ? t("invoices.filter.all") : t(STATUS_LABEL_KEY[s])}
           </button>
         ))}
       </div>
@@ -352,17 +352,17 @@ export default function InvoicesPage() {
       {/* Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">Cargando...</div>
+          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">{t("invoices.loading")}</div>
         ) : invoices.length === 0 ? (
-          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">No hay facturas para este filtro.</div>
+          <div className="px-6 py-10 text-sm text-gray-400 dark:text-slate-500 text-center">{t("invoices.empty")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-                  {["#", "Cliente", "Monto", "Vencimiento", "Estado", "Recordatorios", "Acciones"].map((h) => (
+                  {["invoices.col.number","invoices.col.client","invoices.col.amount","invoices.col.due","invoices.col.status","invoices.col.reminders","invoices.col.actions"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
-                      {h}
+                      {t(h)}
                     </th>
                   ))}
                 </tr>
@@ -391,7 +391,7 @@ export default function InvoicesPage() {
                       <td className="px-4 py-3 text-gray-600 dark:text-slate-400 whitespace-nowrap">{inv.due_date}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[inv.status]}`}>
-                          {STATUS_LABEL[inv.status]}
+                          {t(STATUS_LABEL_KEY[inv.status])}
                         </span>
                       </td>
 
@@ -447,7 +447,7 @@ export default function InvoicesPage() {
                           <div className="flex items-center gap-1">
                             <span className="inline-flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200 dark:border-green-800">
                               <CheckCircle className="w-3.5 h-3.5" />
-                              Cobrada
+                              {t("invoices.action.cobrada")}
                             </span>
                             <button
                               onClick={() => openDetail(inv.id)}
@@ -455,7 +455,7 @@ export default function InvoicesPage() {
                               className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 transition-all duration-150"
                             >
                               <History className="w-3.5 h-3.5" />
-                              Historial
+                              {t("invoices.action.history")}
                             </button>
                           </div>
                         ) : isActive ? (
@@ -467,7 +467,7 @@ export default function InvoicesPage() {
                               className="inline-flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-green-200 dark:border-green-800 transition-all duration-150 disabled:opacity-50"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
-                              {isMarkingPaid ? "..." : "Pagada"}
+                              {isMarkingPaid ? "..." : t("invoices.action.paid")}
                             </button>
                             <button
                               onClick={() => handleSendManual(inv.id)}
@@ -476,7 +476,7 @@ export default function InvoicesPage() {
                               className="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-all duration-150 disabled:opacity-50"
                             >
                               {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                              {isSending ? "Enviando..." : "Enviar"}
+                              {isSending ? t("invoices.sending") : t("invoices.action.send")}
                             </button>
                             {userPlan === "pro" && (
                               <button
@@ -492,7 +492,7 @@ export default function InvoicesPage() {
                                 ) : (
                                   <PlayCircle className="w-3.5 h-3.5" />
                                 )}
-                                {isToggling ? "..." : inv.reminder_config.active ? "Pausar" : "Reanudar"}
+                                {isToggling ? "..." : inv.reminder_config.active ? t("invoices.action.pause") : t("invoices.action.resume")}
                               </button>
                             )}
                             <button
@@ -501,7 +501,7 @@ export default function InvoicesPage() {
                               className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 transition-all duration-150"
                             >
                               <History className="w-3.5 h-3.5" />
-                              Historial
+                              {t("invoices.action.history")}
                             </button>
                           </div>
                         ) : null}
@@ -522,9 +522,9 @@ export default function InvoicesPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/30">
               <span className="text-2xl">🚀</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">Límite del plan Free alcanzado</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">{t("invoices.upgrade.title")}</h2>
             <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
-              El plan gratuito permite hasta <strong>3 facturas activas</strong>. Actualizá al plan Pro para crear facturas ilimitadas con recordatorios automáticos.
+              {t("invoices.upgrade.desc")}
             </p>
             <div className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 px-6 py-4 mb-6 text-left">
               <div className="flex items-center justify-between mb-1">
@@ -542,7 +542,7 @@ export default function InvoicesPage() {
                 onClick={() => setUpgradeOpen(false)}
                 className="flex-1 rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
               >
-                Ahora no
+                {t("invoices.upgrade.later")}
               </button>
               <a
                 href={process.env.NEXT_PUBLIC_CHECKOUT_URL || ""}
@@ -550,7 +550,7 @@ export default function InvoicesPage() {
                 rel="noopener noreferrer"
                 className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition text-center"
               >
-                Actualizar a Pro
+                {t("invoices.upgrade.cta")}
               </a>
             </div>
           </div>
@@ -561,11 +561,11 @@ export default function InvoicesPage() {
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Nueva factura</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">{t("invoices.create.title")}</h2>
 
             <form noValidate onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Cliente *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t("invoices.create.client")}</label>
                 <select
                   value={form.client_id}
                   onChange={(e) => { setForm({ ...form, client_id: e.target.value }); setFormErrors((p) => ({ ...p, client_id: undefined })); }}
@@ -581,7 +581,7 @@ export default function InvoicesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Número de factura *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t("invoices.create.number")}</label>
                   <input
                     type="text"
                     value={form.invoice_number}
@@ -592,7 +592,7 @@ export default function InvoicesPage() {
                   {formErrors.invoice_number && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{formErrors.invoice_number}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Moneda</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t("invoices.create.currency")}</label>
                   <select
                     value={showCustomCurrency ? "OTHER" : form.currency}
                     onChange={(e) => {
@@ -631,7 +631,7 @@ export default function InvoicesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Monto *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t("invoices.create.amount")}</label>
                   <input
                     type="number"
                     min="0.01"
@@ -644,7 +644,7 @@ export default function InvoicesPage() {
                   {formErrors.amount && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{formErrors.amount}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Vencimiento *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t("invoices.create.due")}</label>
                   <input
                     type="date"
                     value={form.due_date}
@@ -656,7 +656,7 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descripción</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t("invoices.create.desc")}</label>
                 <textarea
                   rows={2}
                   value={form.description}
@@ -792,14 +792,14 @@ export default function InvoicesPage() {
                   onClick={() => { setCreateOpen(false); setForm(EMPTY_FORM); setFormErrors({}); setShowCustomCurrency(false); setReminderToggleTouched(false); setShowEmailConfig(false); setEmailOverride({ language: "es", tone: "semi-formal", treatment: "nombre", sender_name: "", instructions: "" }); }}
                   className="flex-1 rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                 >
-                  Cancelar
+                  {t("invoices.create.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition"
                 >
-                  {saving ? "Creando..." : "Crear factura"}
+                  {saving ? t("invoices.create.creating") : t("invoices.create.submit")}
                 </button>
               </div>
             </form>
@@ -821,7 +821,7 @@ export default function InvoicesPage() {
                     <p className="text-sm text-gray-500 dark:text-slate-400">{detailInvoice.client.name}</p>
                   </div>
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[detailInvoice.status]}`}>
-                    {STATUS_LABEL[detailInvoice.status]}
+                    {t(STATUS_LABEL_KEY[detailInvoice.status])}
                   </span>
                 </div>
 
@@ -891,13 +891,13 @@ export default function InvoicesPage() {
                     disabled={sendingReminder}
                     className="w-full mb-5 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 disabled:opacity-60 transition"
                   >
-                    {sendingReminder ? "Enviando..." : "📧 Enviar recordatorio ahora"}
+                    {sendingReminder ? t("invoices.sending") : t("invoices.send_now")}
                   </button>
                 )}
 
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Historial de emails</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">{t("invoices.email_log.title")}</h3>
                 {!detailInvoice.email_logs || detailInvoice.email_logs.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-slate-500">No se han enviado emails aún.</p>
+                  <p className="text-sm text-gray-400 dark:text-slate-500">{t("invoices.email_log.empty")}</p>
                 ) : (
                   <div className="space-y-2">
                     {detailInvoice.email_logs.map((log) => (
@@ -906,10 +906,10 @@ export default function InvoicesPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-900 dark:text-slate-100">Día {log.reminder_day}</span>
                             <span className="text-xs text-gray-400 dark:text-slate-500">·</span>
-                            <span className="text-xs text-gray-500 dark:text-slate-400">{TONE_LABEL[log.tone] ?? log.tone}</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400">{TONE_LABEL_KEY[log.tone] ? t(TONE_LABEL_KEY[log.tone]) : log.tone}</span>
                           </div>
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${log.status === "sent" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : log.status === "opened" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"}`}>
-                            {log.status === "sent" ? "Enviado" : log.status === "opened" ? "Abierto" : "Fallido"}
+                            {log.status === "sent" ? t("emails.status.sent") : log.status === "opened" ? "Abierto" : t("emails.status.failed")}
                           </span>
                         </div>
                         <p className="text-gray-400 dark:text-slate-500 text-xs mt-1">{new Date(log.sent_at).toLocaleString("es")}</p>
@@ -923,7 +923,7 @@ export default function InvoicesPage() {
                   onClick={() => setDetailInvoice(null)}
                   className="mt-6 w-full rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                 >
-                  Cerrar
+                  {t("invoices.close")}
                 </button>
               </>
             ) : null}

@@ -7,6 +7,8 @@ import { BellRing } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateEmail, validatePassword } from "@/app/lib/validations";
+import { useLanguage } from "@/app/contexts/language-context";
+import { LanguageToggle } from "@/app/components/ui/language-toggle";
 
 interface TokenResponse {
   access_token: string;
@@ -16,6 +18,7 @@ interface TokenResponse {
 export default function LoginPage() {
   const router = useRouter();
   const toast = useToastContext();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -37,11 +40,11 @@ export default function LoginPage() {
         password,
       });
       localStorage.setItem("access_token", data.access_token);
-      toast.success("¡Bienvenido!");
+      toast.success(t("auth.login.submit"));
       router.push("/dashboard");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
-      toast.error("Email o contraseña incorrectos");
+      toast.error(t("auth.login.error"));
       void msg;
     } finally {
       setLoading(false);
@@ -53,6 +56,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 px-4">
+      <div className="absolute top-4 right-4">
+        <LanguageToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3">
@@ -65,12 +71,12 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-700 p-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-6">Iniciar sesión</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-6">{t("auth.login.title")}</h2>
 
           <form noValidate onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                Email
+                {t("auth.login.email")}
               </label>
               <input
                 id="email"
@@ -86,7 +92,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                Contraseña
+                {t("auth.login.password")}
               </label>
               <input
                 id="password"
@@ -105,14 +111,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full inline-flex justify-center items-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm disabled:opacity-60 transition-all duration-150"
             >
-              {loading ? "Ingresando..." : "Iniciar sesión"}
+              {loading ? "..." : t("auth.login.submit")}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-slate-400">
-            ¿No tenés cuenta?{" "}
+            {t("auth.login.no_account")}{" "}
             <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-medium">
-              Crear cuenta
+              {t("auth.login.register")}
             </Link>
           </p>
         </div>

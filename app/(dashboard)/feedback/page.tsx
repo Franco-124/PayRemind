@@ -5,6 +5,7 @@ import { Star, Send, CheckCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 import { useToastContext } from "@/app/components/ui/toast-provider";
+import { useLanguage } from "@/app/contexts/language-context";
 
 interface FeedbackForm {
   category: string;
@@ -44,6 +45,7 @@ const PRIORITY_STYLES: Record<string, { selected: string; base: string }> = {
 export default function FeedbackPage() {
   useRequireAuth();
   const toast = useToastContext();
+  const { t } = useLanguage();
   const [form, setForm] = useState<FeedbackForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FeedbackForm, string>>>({});
   const [saving, setSaving] = useState(false);
@@ -86,15 +88,15 @@ export default function FeedbackPage() {
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-2">¡Gracias por tu feedback!</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-2">{t("feedback.success.title")}</h3>
           <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
-            Lo revisaremos pronto y lo tendremos en cuenta para mejorar PayRemind.
+            {t("feedback.success.desc")}
           </p>
           <button
             onClick={() => setSubmitted(false)}
             className="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline"
           >
-            Enviar otro feedback
+            {t("feedback.send_another")}
           </button>
         </div>
       </div>
@@ -105,9 +107,9 @@ export default function FeedbackPage() {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Enviar feedback</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t("feedback.title")}</h1>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-          Tu opinión nos ayuda a mejorar PayRemind. Cuéntanos qué piensas.
+          {t("feedback.subtitle")}
         </p>
       </div>
 
@@ -115,7 +117,7 @@ export default function FeedbackPage() {
 
         {/* Categoría */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Categoría *</label>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">{t("feedback.category")}</label>
           <div className="grid grid-cols-2 gap-3">
             {CATEGORIES.map((cat) => (
               <button
@@ -138,7 +140,7 @@ export default function FeedbackPage() {
 
         {/* Rating */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Valoración general *</label>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">{t("feedback.rating")}</label>
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -163,10 +165,10 @@ export default function FeedbackPage() {
 
         {/* Prioridad */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Prioridad *</label>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">{t("feedback.priority")}</label>
           <div className="flex gap-3">
             {(["low", "medium", "high"] as const).map((p) => {
-              const labels = { low: "Baja", medium: "Media", high: "Alta" };
+              const labels = { low: t("feedback.priority.low"), medium: t("feedback.priority.medium"), high: t("feedback.priority.high") };
               const styles = PRIORITY_STYLES[p];
               return (
                 <button
@@ -187,7 +189,7 @@ export default function FeedbackPage() {
 
         {/* Mensaje */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">Mensaje *</label>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">{t("feedback.message")}</label>
           <textarea
             rows={5}
             value={form.message}
@@ -214,7 +216,7 @@ export default function FeedbackPage() {
           className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-sm disabled:opacity-60 transition-all duration-150"
         >
           <Send className="w-4 h-4" />
-          {saving ? "Enviando..." : "Enviar feedback"}
+          {saving ? t("feedback.sending") : t("feedback.submit")}
         </button>
 
       </form>

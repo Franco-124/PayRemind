@@ -5,6 +5,7 @@ import { Clock, DollarSign, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import { useRequireAuth } from "@/app/hooks/useRequireAuth";
+import { useLanguage } from "@/app/contexts/language-context";
 
 interface Invoice {
   id: string;
@@ -16,8 +17,9 @@ interface Invoice {
   client: { name: string };
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente", overdue: "Vencida", paid: "Pagada", cancelled: "Cancelada",
+const STATUS_LABEL_KEY: Record<string, string> = {
+  pending: "invoices.filter.pending", overdue: "invoices.filter.overdue",
+  paid: "invoices.filter.paid", cancelled: "invoices.filter.cancelled",
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -29,6 +31,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function DashboardPage() {
   useRequireAuth();
+  const { t } = useLanguage();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,8 +68,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Dashboard</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Resumen de tu actividad</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t("dashboard.title")}</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{t("dashboard.subtitle")}</p>
         </div>
       </div>
 
@@ -83,10 +86,10 @@ export default function DashboardPage() {
             <AlertCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
-                Has alcanzado el límite del plan Free
+                {t("dashboard.free_limit")}
               </p>
               <p className="text-xs text-indigo-700 dark:text-indigo-400 mt-0.5">
-                Tienes {pending.length + overdue.length} facturas activas. Upgrade a Pro para crear facturas ilimitadas.
+                {pending.length + overdue.length} {t("dashboard.free_limit_sub")}
               </p>
             </div>
           </div>
@@ -94,7 +97,7 @@ export default function DashboardPage() {
             href="/settings"
             className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-all duration-150"
           >
-            Upgrade a Pro
+            {t("common.upgrade")}
           </Link>
         </div>
       )}
@@ -102,14 +105,14 @@ export default function DashboardPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryCard
-          label="Facturas pendientes"
+          label={t("dashboard.pending")}
           value={loading ? "—" : String(pending.length)}
           icon={Clock}
           iconColor="text-indigo-600 dark:text-indigo-400"
           iconBg="bg-indigo-50 dark:bg-indigo-900/30"
         />
         <SummaryCard
-          label="Monto total pendiente"
+          label={t("dashboard.total_pending")}
           value={
             loading ? "—" : Object.keys(totalsByCurrency).length === 0 ? "$ 0" : (
               <div className="flex flex-col gap-0.5 mt-1">
@@ -129,7 +132,7 @@ export default function DashboardPage() {
           iconBg="bg-green-50 dark:bg-green-900/30"
         />
         <SummaryCard
-          label="Facturas vencidas"
+          label={t("dashboard.overdue")}
           value={loading ? "—" : String(overdue.length)}
           icon={AlertCircle}
           iconColor="text-red-600 dark:text-red-400"
@@ -141,27 +144,27 @@ export default function DashboardPage() {
       {/* Recent invoices */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Actividad reciente</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t("dashboard.recent")}</h2>
         </div>
 
         {loading ? (
-          <div className="px-6 py-12 text-sm text-gray-400 dark:text-slate-500 text-center">Cargando...</div>
+          <div className="px-6 py-12 text-sm text-gray-400 dark:text-slate-500 text-center">{t("common.loading")}</div>
         ) : recent.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
               <Clock className="w-5 h-5 text-gray-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">Sin actividad reciente</h3>
-            <p className="text-sm text-gray-500 dark:text-slate-400">Creá tu primera factura para empezar.</p>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">{t("dashboard.no_activity")}</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400">{t("dashboard.no_activity_sub")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-                  {["#", "Cliente", "Monto", "Vencimiento", "Estado"].map((h) => (
+                  {["invoices.col.number", "invoices.col.client", "invoices.col.amount", "invoices.col.due", "invoices.col.status"].map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                      {h}
+                      {t(h)}
                     </th>
                   ))}
                 </tr>
@@ -177,7 +180,7 @@ export default function DashboardPage() {
                     <td className="px-6 py-4 text-gray-600 dark:text-slate-400">{inv.due_date}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[inv.status]}`}>
-                        {STATUS_LABEL[inv.status]}
+                        {t(STATUS_LABEL_KEY[inv.status])}
                       </span>
                     </td>
                   </tr>

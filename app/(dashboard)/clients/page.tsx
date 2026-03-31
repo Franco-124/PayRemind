@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateEmail, validateRequired } from "@/app/lib/validations";
 import { useRequireAuth } from "@/app/hooks/useRequireAuth";
+import { useLanguage } from "@/app/contexts/language-context";
 
 interface Client {
   id: string;
@@ -161,6 +162,7 @@ function EmailConfigSection({
 export default function ClientsPage() {
   useRequireAuth();
   const toast = useToastContext();
+  const { t } = useLanguage();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -298,29 +300,29 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Clientes</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Gestiona los contactos a quienes facturás</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t("clients.title")}</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{t("clients.subtitle")}</p>
         </div>
         <button
           onClick={() => { setCreateOpen(true); setCreateErrors({}); setCreateEmailConfigOpen(false); }}
           className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all duration-150"
         >
-          + Nuevo cliente
+          {t("clients.new")}
         </button>
       </div>
 
       {/* Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="px-6 py-12 text-sm text-gray-400 dark:text-slate-500 text-center">Cargando...</div>
+          <div className="px-6 py-12 text-sm text-gray-400 dark:text-slate-500 text-center">{t("clients.loading")}</div>
         ) : clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
               <Users className="w-5 h-5 text-gray-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">Sin clientes aún</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">{t("clients.empty.title")}</h3>
             <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm">
-              Creá tu primer cliente para poder emitir facturas y enviar recordatorios.
+              {t("clients.empty.desc")}
             </p>
           </div>
         ) : (
@@ -328,9 +330,9 @@ export default function ClientsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-                  {["Nombre", "Email", "Empresa", "Creado", "Acciones"].map((h) => (
+                  {["clients.col.name","clients.col.email","clients.col.company","clients.col.created","clients.col.actions"].map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                      {h}
+                      {t(h)}
                     </th>
                   ))}
                 </tr>
@@ -357,14 +359,14 @@ export default function ClientsPage() {
                           onClick={() => openEdit(c)}
                           className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150"
                         >
-                          Editar
+                          {t("clients.edit")}
                         </button>
                         <button
                           onClick={() => handleDelete(c.id, c.name)}
                           disabled={deletingId === c.id}
                           className="inline-flex items-center text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150 disabled:opacity-50"
                         >
-                          {deletingId === c.id ? "Eliminando..." : "Eliminar"}
+                          {deletingId === c.id ? t("clients.deleting") : t("clients.delete")}
                         </button>
                       </div>
                     </td>
@@ -383,22 +385,22 @@ export default function ClientsPage() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/30">
               <span className="text-xl">🗑️</span>
             </div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">¿Eliminar cliente?</h2>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">{t("clients.confirm_delete")}</h2>
             <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
-              Vas a eliminar a <strong>{confirmDelete.name}</strong>. Esta acción no se puede deshacer.
+              {confirmDelete.name} — {t("clients.confirm_desc")}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
                 className="flex-1 inline-flex justify-center items-center bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
               >
-                Cancelar
+                {t("clients.form.cancel")}
               </button>
               <button
                 onClick={confirmDeleteAction}
                 className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-all duration-150"
               >
-                Eliminar
+                {t("clients.delete")}
               </button>
             </div>
           </div>
@@ -410,7 +412,7 @@ export default function ClientsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Nuevo cliente</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t("clients.create.title")}</h2>
               <button
                 onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_FORM); setCreateErrors({}); }}
                 className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition text-xl leading-none"
@@ -421,7 +423,7 @@ export default function ClientsPage() {
 
             <form noValidate onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Nombre *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.name")}</label>
                 <input
                   type="text"
                   value={createForm.name}
@@ -433,7 +435,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.email")}</label>
                 <input
                   type="email"
                   value={createForm.email}
@@ -445,7 +447,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.company")}</label>
                 <input
                   type="text"
                   value={createForm.company}
@@ -456,7 +458,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Notas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.notes")}</label>
                 <textarea
                   rows={2}
                   value={createForm.notes}
@@ -480,14 +482,14 @@ export default function ClientsPage() {
                   onClick={() => { setCreateOpen(false); setCreateForm(EMPTY_FORM); setCreateErrors({}); }}
                   className="flex-1 inline-flex justify-center items-center bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
                 >
-                  Cancelar
+                  {t("clients.form.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="flex-1 inline-flex justify-center items-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm disabled:opacity-60 transition-all duration-150"
                 >
-                  {saving ? "Guardando..." : "Crear cliente"}
+                  {saving ? t("clients.form.saving") : t("clients.form.save")}
                 </button>
               </div>
             </form>
@@ -500,7 +502,7 @@ export default function ClientsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Editar cliente</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t("clients.edit.title")}</h2>
               <button
                 onClick={() => setEditClient(null)}
                 className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition text-xl leading-none"
@@ -511,7 +513,7 @@ export default function ClientsPage() {
 
             <form noValidate onSubmit={handleUpdate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Nombre *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.name")}</label>
                 <input
                   type="text"
                   value={editForm.name}
@@ -522,7 +524,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.email")}</label>
                 <input
                   type="email"
                   value={editForm.email}
@@ -533,7 +535,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.company")}</label>
                 <input
                   type="text"
                   value={editForm.company}
@@ -543,7 +545,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">Notas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">{t("clients.form.notes")}</label>
                 <textarea
                   rows={2}
                   value={editForm.notes}
@@ -566,14 +568,14 @@ export default function ClientsPage() {
                   onClick={() => setEditClient(null)}
                   className="flex-1 inline-flex justify-center items-center bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
                 >
-                  Cancelar
+                  {t("clients.form.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={editSaving}
                   className="flex-1 inline-flex justify-center items-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm disabled:opacity-60 transition-all duration-150"
                 >
-                  {editSaving ? "Guardando..." : "Guardar cambios"}
+                  {editSaving ? t("clients.form.saving") : t("clients.form.save_edit")}
                 </button>
               </div>
             </form>

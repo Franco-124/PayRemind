@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle, ExternalLink } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useRequireAuth } from "@/app/hooks/useRequireAuth";
+import { useLanguage } from "@/app/contexts/language-context";
 
 const CHECKOUT_URL = process.env.NEXT_PUBLIC_CHECKOUT_URL || "";
 
@@ -19,6 +20,7 @@ interface UserInfo {
 export default function SettingsPage() {
   useRequireAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,7 +42,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48 text-sm text-gray-400 dark:text-slate-500">
-        Cargando...
+        {t("settings.loading")}
       </div>
     );
   }
@@ -49,8 +51,8 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Ajustes</h1>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Administra tu cuenta y suscripción</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t("settings.title")}</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{t("settings.subtitle")}</p>
       </div>
 
       {error && (
@@ -62,19 +64,19 @@ export default function SettingsPage() {
       {/* Account section */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm divide-y divide-gray-100 dark:divide-slate-700">
         <div className="px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Mi cuenta</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">{t("settings.account")}</h2>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Nombre</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">{t("settings.name")}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{user?.full_name}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Email</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">{t("settings.email")}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">{user?.email}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Plan</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">{t("settings.plan")}</p>
             <div className="mt-1">
               <span
                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
@@ -88,7 +90,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Miembro desde</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">{t("settings.member_since")}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-slate-100">
               {user?.created_at ? new Date(user.created_at).toLocaleDateString("es") : "—"}
             </p>
@@ -99,7 +101,7 @@ export default function SettingsPage() {
       {/* Subscription section */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm divide-y divide-gray-100 dark:divide-slate-700">
         <div className="px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Suscripción</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">{t("settings.subscription")}</h2>
         </div>
         <div className="px-6 py-5">
           {user?.plan === "pro" ? (
@@ -109,9 +111,9 @@ export default function SettingsPage() {
                   <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">Plan Pro activo</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">{t("settings.pro_active")}</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                    Disfrutás de recordatorios ilimitados y todas las funciones premium.
+                    {t("settings.pro_desc")}
                   </p>
                 </div>
               </div>
@@ -126,7 +128,7 @@ export default function SettingsPage() {
                   className="inline-flex items-center gap-2 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 text-sm font-medium px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm transition-all duration-150"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Gestionar suscripción
+                  {t("settings.manage")}
                 </a>
                 <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">
                   Para cancelar tu suscripción, revisa el email
@@ -145,7 +147,7 @@ export default function SettingsPage() {
             <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-600 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">Plan Free</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">{t("settings.free_title")}</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 max-w-xs">
                     Hasta 3 facturas activas. Actualizá a Pro para desbloquear recordatorios ilimitados y acceso prioritario.
                   </p>
@@ -164,7 +166,7 @@ export default function SettingsPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-150 whitespace-nowrap"
                   >
-                    Upgrade a Pro
+                    {t("settings.upgrade")}
                   </a>
                 </div>
               </div>
