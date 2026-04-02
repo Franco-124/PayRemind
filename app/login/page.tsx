@@ -27,7 +27,7 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const emailErr = validateEmail(email);
-    const passErr = validatePassword(password);
+    const passErr = validatePassword(password, t);
     if (emailErr || passErr) {
       setErrors({ email: emailErr ?? undefined, password: passErr ?? undefined });
       return;

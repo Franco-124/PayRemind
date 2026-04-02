@@ -4,9 +4,19 @@ export function validateEmail(email: string): string | null {
   return null;
 }
 
-export function validatePassword(password: string): string | null {
-  if (!password) return "La contraseña es requerida";
-  if (password.length < 8) return "La contraseña debe tener al menos 8 caracteres";
+import { checkPassword } from "./password-rules";
+
+export function validatePassword(
+  password: string,
+  t: (key: string) => string = (k) => k,
+): string | null {
+  if (!password) return t("password.error.required");
+  const c = checkPassword(password);
+  if (!c.minLength) return t("password.error.minLength");
+  if (!c.uppercase) return t("password.error.uppercase");
+  if (!c.lowercase) return t("password.error.lowercase");
+  if (!c.digit)     return t("password.error.digit");
+  if (!c.special)   return t("password.error.special");
   return null;
 }
 

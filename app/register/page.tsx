@@ -3,16 +3,91 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BellRing } from "lucide-react";
+import { BellRing, Check, X } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToastContext } from "@/app/components/ui/toast-provider";
 import { validateEmail, validatePassword, validateRequired } from "@/app/lib/validations";
+import { checkPassword, type PasswordCheck } from "@/app/lib/password-rules";
 import { useLanguage } from "@/app/contexts/language-context";
 import { LanguageToggle } from "@/app/components/ui/language-toggle";
 
 interface TokenResponse {
   access_token: string;
   token_type: string;
+}
+
+function passwordStrengthScore(c: PasswordCheck): number {
+  return [c.minLength, c.uppercase, c.lowercase, c.digit, c.special].filter(Boolean).length;
+}
+
+function PasswordStrengthBar({ password, t }: { password: string; t: (k: string) => string }) {
+  if (!password) return null;
+
+  const c = checkPassword(password);
+  const score = passwordStrengthScore(c);
+
+  const bars = [
+    { min: 1, color: "bg-red-500" },
+    { min: 2, color: "bg-orange-400" },
+    { min: 3, color: "bg-yellow-400" },
+    { min: 4, color: "bg-blue-500" },
+    { min: 5, color: "bg-green-500" },
+  ];
+
+  const strengthLabel = [
+    t("password.strength.weak"),
+    t("password.strength.weak"),
+    t("password.strength.fair"),
+    t("password.strength.good"),
+    t("password.strength.strong"),
+  ][score - 1] ?? "";
+
+  const rules: Array<{ key: keyof PasswordCheck; label: string }> = [
+    { key: "minLength", label: t("password.rule.minLength") },
+    { key: "uppercase", label: t("password.rule.uppercase") },
+    { key: "lowercase", label: t("password.rule.lowercase") },
+    { key: "digit",     label: t("password.rule.digit") },
+    { key: "special",   label: t("password.rule.special") },
+  ];
+
+  return (
+    <div className="mt-2 space-y-2">
+      {/* Bar */}
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1 flex-1">
+          {bars.map((bar, i) => (
+            <div
+              key={i}
+              className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                score >= bar.min ? bar.color : "bg-gray-200 dark:bg-slate-600"
+              }`}
+            />
+          ))}
+        </div>
+        {score > 0 && (
+          <span className="text-xs text-gray-500 dark:text-slate-400 w-14 text-right shrink-0">
+            {strengthLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Checklist */}
+      <ul className="space-y-0.5">
+        {rules.map(({ key, label }) => (
+          <li key={key} className="flex items-center gap-1.5 text-xs">
+            {c[key] ? (
+              <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+            ) : (
+              <X className="w-3.5 h-3.5 text-gray-300 dark:text-slate-600 shrink-0" />
+            )}
+            <span className={c[key] ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-slate-400"}>
+              {label}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export default function RegisterPage() {
@@ -22,6 +97,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showStrength, setShowStrength] = useState(false);
   const [errors, setErrors] = useState<{ fullName?: string; email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +105,7 @@ export default function RegisterPage() {
     e.preventDefault();
     const nameErr = validateRequired(fullName, "nombre");
     const emailErr = validateEmail(email);
-    const passErr = validatePassword(password);
+    const passErr = validatePassword(password, t);
     if (nameErr || emailErr || passErr) {
       setErrors({ fullName: nameErr ?? undefined, email: emailErr ?? undefined, password: passErr ?? undefined });
       return;
@@ -123,11 +199,16 @@ export default function RegisterPage() {
                 type="password"
                 autoComplete="new-password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
+                onFocus={() => setShowStrength(true)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrors((p) => ({ ...p, password: undefined }));
+                }}
                 className={inputCls(errors.password)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="••••••••"
               />
               {errors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password}</p>}
+              {showStrength && <PasswordStrengthBar password={password} t={t} />}
             </div>
 
             <button

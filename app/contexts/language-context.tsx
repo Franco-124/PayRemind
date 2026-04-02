@@ -24,6 +24,24 @@ const LanguageContext = createContext<LanguageContextType>({
 
 const translations: Record<Language, Record<string, string>> = {
   es: {
+    // Password validation
+    "password.error.required":  "La contraseña es requerida",
+    "password.error.minLength": "Mínimo 8 caracteres",
+    "password.error.uppercase": "Debe incluir al menos una mayúscula",
+    "password.error.lowercase": "Debe incluir al menos una minúscula",
+    "password.error.digit":     "Debe incluir al menos un número",
+    "password.error.special":   "Debe incluir al menos un carácter especial",
+    "password.rule.minLength":  "Mínimo 8 caracteres",
+    "password.rule.uppercase":  "Al menos una mayúscula (A-Z)",
+    "password.rule.lowercase":  "Al menos una minúscula (a-z)",
+    "password.rule.digit":      "Al menos un número (0-9)",
+    "password.rule.special":    "Al menos un carácter especial (!@#$...)",
+    "password.strength.label":  "Fortaleza de la contraseña",
+    "password.strength.weak":   "Débil",
+    "password.strength.fair":   "Regular",
+    "password.strength.good":   "Buena",
+    "password.strength.strong": "Fuerte",
+
     // Auth
     "auth.login.title":          "Iniciar sesión",
     "auth.login.subtitle":       "Bienvenido de vuelta",
@@ -224,6 +242,24 @@ const translations: Record<Language, Record<string, string>> = {
   },
 
   en: {
+    // Password validation
+    "password.error.required":  "Password is required",
+    "password.error.minLength": "Minimum 8 characters",
+    "password.error.uppercase": "Must include at least one uppercase letter",
+    "password.error.lowercase": "Must include at least one lowercase letter",
+    "password.error.digit":     "Must include at least one number",
+    "password.error.special":   "Must include at least one special character",
+    "password.rule.minLength":  "Minimum 8 characters",
+    "password.rule.uppercase":  "At least one uppercase letter (A-Z)",
+    "password.rule.lowercase":  "At least one lowercase letter (a-z)",
+    "password.rule.digit":      "At least one number (0-9)",
+    "password.rule.special":    "At least one special character (!@#$...)",
+    "password.strength.label":  "Password strength",
+    "password.strength.weak":   "Weak",
+    "password.strength.fair":   "Fair",
+    "password.strength.good":   "Good",
+    "password.strength.strong": "Strong",
+
     // Auth
     "auth.login.title":          "Sign in",
     "auth.login.subtitle":       "Welcome back",
