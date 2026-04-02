@@ -33,7 +33,14 @@
       "Bash(powershell -Command \"Remove-Item ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\backend\\\\test_email.py''\")",
       "Bash(powershell -Command \"Remove-Item -Recurse -Force ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\app\\\\\\(auth\\)\\\\login''; Remove-Item -Recurse -Force ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\app\\\\\\(auth\\)\\\\register''\")",
       "Bash(powershell -Command \"Remove-Item -Recurse -Force ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\app\\\\\\(auth\\)''\")",
-      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\package.json'' | Select-String ''@types/react''\")"
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Usuario\\\\Documents\\\\PayRemind\\\\package.json'' | Select-String ''@types/react''\")",
+      "Bash(..venvScriptsactivate)",
+      "Bash(uvicorn app.main:app --reload --port 8001)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(python -c \"import ast, sys; ast.parse\\(open\\(''app/services/subscription_service.py''\\).read\\(\\)\\); print\\(''syntax OK''\\)\")",
+      "Bash(npx next:*)"
     ]
   }
 }

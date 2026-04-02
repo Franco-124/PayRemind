@@ -93,7 +93,7 @@ export default function RegisterPage() {
                 value={fullName}
                 onChange={(e) => { setFullName(e.target.value); setErrors((p) => ({ ...p, fullName: undefined })); }}
                 className={inputCls(errors.fullName)}
-                placeholder="Johan Franco"
+                placeholder="Jhon Doe"
               />
               {errors.fullName && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.fullName}</p>}
             </div>
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
                 className={inputCls(errors.email)}
-                placeholder="tu@email.com"
+                placeholder="example@email.com"
               />
               {errors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email}</p>}
             </div>
