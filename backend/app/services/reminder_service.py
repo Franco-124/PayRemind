@@ -268,7 +268,18 @@ def process_pending_reminders(db: Session) -> None:
             )
 
             logger.info("Sending email to: %s", invoice.client.email)
-            success = send_email(invoice.client.email, subject, body)
+            success = send_email(
+                to=invoice.client.email,
+                subject=subject,
+                body=body,
+                freelancer_name=config.get("sender_name", invoice.user.full_name),
+                client_name=invoice.client.name,
+                invoice_number=invoice.invoice_number,
+                amount=float(invoice.amount),
+                currency=invoice.currency,
+                days_overdue=days_since_due,
+                tone=tone,
+            )
 
             log = EmailLog(
                 invoice_id=invoice.id,
