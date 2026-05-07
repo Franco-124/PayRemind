@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, ExternalLink } from "lucide-react";
+import { CheckCircle, ExternalLink, Gift } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { apiClient } from "@/lib/api-client";
 import { useRequireAuth } from "@/app/hooks/useRequireAuth";
 import { useLanguage } from "@/app/contexts/language-context";
@@ -15,6 +17,8 @@ interface UserInfo {
   full_name: string;
   plan: "free" | "pro";
   created_at: string;
+  is_trial: boolean;
+  trial_ends_at: string | null;
 }
 
 export default function SettingsPage() {
@@ -97,6 +101,22 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {/* Trial banner */}
+      {user?.is_trial && user?.trial_ends_at && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/30 dark:border-indigo-800 p-4 flex items-center gap-3">
+          <Gift className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
+              🎉 Plan Pro gratis activo
+            </p>
+            <p className="text-xs text-indigo-700 dark:text-indigo-400 mt-0.5">
+              Tu período de prueba vence el{" "}
+              {format(new Date(user.trial_ends_at), "d 'de' MMMM, yyyy", { locale: es })}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Subscription section */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm divide-y divide-gray-100 dark:divide-slate-700">

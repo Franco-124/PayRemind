@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BellRing, Zap, Brain, Shield, Menu, X } from "lucide-react";
 import { ThemeSelector } from "@/app/components/ui/theme-selector";
@@ -99,6 +99,16 @@ export default function LandingPage() {
   const lang = language;
   const t = copy[lang];
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<number | null>(null);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) return;
+    fetch(`${apiUrl}/stats/trial-slots`)
+      .then((r) => r.json())
+      .then((data) => setAvailableSlots(data.available))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white overflow-x-hidden">
@@ -205,6 +215,14 @@ export default function LandingPage() {
               {t.hero.cta2} ↓
             </a>
           </div>
+          {availableSlots !== null && availableSlots > 0 && (
+            <div className="mt-6 inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-full px-4 py-2 text-sm">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span className="text-indigo-700 dark:text-indigo-400 font-medium">
+                {availableSlots} de 10 lugares gratis disponibles
+              </span>
+            </div>
+          )}
         </div>
       </section>
 

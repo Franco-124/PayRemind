@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     lemon_squeezy_store_id: str = ""
     lemon_squeezy_pro_variant_id: str = ""
     admin_email: str = "johan.franco@nousware.ai"
+    trial_slots_total: int = 10
+    trial_days: int = 30
 
     class Config:
         env_file = ".env"

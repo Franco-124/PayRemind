@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserResponse
@@ -25,11 +28,23 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Token:
             detail="Email already registered",
         )
 
+    trial_users_count = db.query(User).filter(User.is_trial == True).count()  # noqa: E712
+    if trial_users_count < settings.trial_slots_total:
+        plan = "pro"
+        is_trial = True
+        trial_ends_at = datetime.now(timezone.utc) + timedelta(days=settings.trial_days)
+    else:
+        plan = "free"
+        is_trial = False
+        trial_ends_at = None
+
     user = User(
         email=user_in.email,
         hashed_password=hash_password(user_in.password),
         full_name=user_in.full_name,
-        plan="free",
+        plan=plan,
+        is_trial=is_trial,
+        trial_ends_at=trial_ends_at,
     )
     db.add(user)
     db.commit()

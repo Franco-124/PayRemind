@@ -43,6 +43,8 @@ class UserResponse(BaseModel):
     full_name: str
     plan: str
     created_at: datetime
+    is_trial: bool = False
+    trial_ends_at: datetime | None = None
 
 
 class Token(BaseModel):
