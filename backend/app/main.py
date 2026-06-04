@@ -15,6 +15,7 @@ from app.routers import email_logs as email_logs_router
 from app.routers import feedback as feedback_router
 from app.routers import invoices as invoices_router
 from app.routers import finance as finance_router
+from app.routers import invoice_scan as invoice_scan_router
 from app.routers import stats as stats_router
 from app.routers import webhooks as webhooks_router
 from app.scheduler.jobs import check_and_send_reminders, check_expired_trials
@@ -70,3 +71,4 @@ app.include_router(feedback_router.router, prefix="/feedback", tags=["feedback"]
 app.include_router(webhooks_router.router, prefix="/webhooks", tags=["webhooks"])
 app.include_router(stats_router.router, prefix="/stats", tags=["stats"])
 app.include_router(finance_router.router, prefix="/finance", tags=["finance"])
+app.include_router(invoice_scan_router.router, prefix="/invoices", tags=["invoice-scan"])
