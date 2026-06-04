@@ -55,8 +55,8 @@ app = FastAPI(title="PayRemind API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=["*"],  # En producción, es mejor listar los dominios autorizados
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
