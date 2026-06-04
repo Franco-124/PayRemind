@@ -8,6 +8,17 @@ from app.schemas.invoice import (
     InvoiceResponse,
 )
 from app.schemas.email_log import EmailLogResponse
+from app.schemas.transaction import (
+    CategoryResponse,
+    TransactionCreate,
+    TransactionResponse,
+    BudgetCreate,
+    BudgetResponse,
+    FinancialSummary,
+    CategorySummary,
+    BudgetStatus,
+    FinancialDashboard,
+)
 
 __all__ = [
     "UserCreate",
@@ -23,4 +34,13 @@ __all__ = [
     "InvoiceStatusUpdate",
     "InvoiceResponse",
     "EmailLogResponse",
+    "CategoryResponse",
+    "TransactionCreate",
+    "TransactionResponse",
+    "BudgetCreate",
+    "BudgetResponse",
+    "FinancialSummary",
+    "CategorySummary",
+    "BudgetStatus",
+    "FinancialDashboard",
 ]

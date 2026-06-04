@@ -1,8 +1,11 @@
+import logging
 from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Session, joinedload
+
+logger = logging.getLogger(__name__)
 
 from app.models.client import Client
 from app.models.invoice import Invoice
@@ -138,6 +141,21 @@ def update_invoice_status(
     _commit(db)
     db.refresh(invoice)
     db.refresh(invoice, ["client"])
+
+    if data.status == "paid":
+        from app.services.finance_service import register_invoice_payment
+        try:
+            register_invoice_payment(
+                user_id=user_id,
+                invoice_id=invoice_id,
+                amount=float(invoice.amount),
+                currency=invoice.currency,
+                db=db,
+            )
+            logger.info("Auto-registered income for paid invoice %s", invoice_id)
+        except Exception as e:
+            logger.error("Failed to register payment for invoice %s: %s", invoice_id, e)
+
     return invoice
 
 
