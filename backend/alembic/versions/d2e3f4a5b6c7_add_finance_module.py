@@ -20,9 +20,24 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE IF NOT EXISTS category_type AS ENUM ('income', 'expense')")
-    op.execute("CREATE TYPE IF NOT EXISTS transaction_type AS ENUM ('income', 'expense')")
-    op.execute("CREATE TYPE IF NOT EXISTS budget_period AS ENUM ('monthly', 'annual')")
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE category_type AS ENUM ('income', 'expense');
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE transaction_type AS ENUM ('income', 'expense');
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE budget_period AS ENUM ('monthly', 'annual');
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
+    """)
 
     op.create_table(
         'categories',
