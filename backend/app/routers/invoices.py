@@ -1,12 +1,15 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
 from app.schemas.invoice import (
     InvoiceCreate,
+    InvoiceEmitRequest,
+    InvoiceEmitResponse,
     InvoiceResponse,
     InvoiceStatusUpdate,
     InvoiceUpdate,
@@ -15,6 +18,41 @@ from app.services.auth_service import get_current_user
 from app.services import invoice_service
 
 router = APIRouter()
+
+
+@router.post("/emit", response_model=InvoiceEmitResponse, status_code=status.HTTP_201_CREATED)
+def emit_invoice(
+    data: InvoiceEmitRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> InvoiceEmitResponse:
+    """Create an invoice from line items, generate a PDF and email it to the client."""
+    invoice, email_sent = invoice_service.emit_invoice(current_user.id, data, db)
+    total = float(invoice.amount)
+    response = InvoiceEmitResponse.model_validate(invoice)
+    response.sent = email_sent
+    response.total = total
+    return response
+
+
+@router.get("/{invoice_id}/pdf")
+def download_invoice_pdf(
+    invoice_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    """Regenerate and download the PDF for an emitted invoice."""
+    import io
+    pdf_bytes, invoice_number = invoice_service.get_invoice_pdf_bytes(
+        invoice_id, current_user.id, db
+    )
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="factura-{invoice_number}.pdf"'
+        },
+    )
 
 
 @router.get("/", response_model=list[InvoiceResponse])

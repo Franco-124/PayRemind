@@ -16,15 +16,31 @@ class ReminderConfig(BaseModel):
 VALID_STATUSES = {"pending", "overdue", "paid", "cancelled"}
 
 
+class InvoiceItem(BaseModel):
+    description: str
+    quantity: float = Field(gt=0)
+    unit_price: float = Field(gt=0)
+    total: Optional[float] = None  # calculado por el backend
+
+
 class InvoiceCreate(BaseModel):
     client_id: str
-    invoice_number: str
+    invoice_number: Optional[str] = None  # auto-asignado si no se provee
     amount: Decimal = Field(gt=0)
     currency: str = Field(default="USD", min_length=2, max_length=10)
     due_date: date
     description: Optional[str] = None
     reminder_config: Optional[ReminderConfig] = None
     email_config_override: Optional[dict] = None
+
+
+class InvoiceEmitRequest(BaseModel):
+    client_id: str
+    items: list[InvoiceItem] = Field(min_length=1)
+    currency: str = Field(default="USD", min_length=2, max_length=10)
+    due_date: date
+    notes: Optional[str] = None
+    issued_date: Optional[date] = None  # default: today en el service
 
 
 class InvoiceUpdate(BaseModel):
@@ -61,6 +77,32 @@ class InvoiceResponse(BaseModel):
     description: Optional[str]
     reminder_config: dict
     email_config_override: Optional[dict]
+    items: Optional[list] = None
+    issued_date: Optional[date] = None
+    sent_at: Optional[datetime] = None
     created_at: datetime
     client: ClientResponse
     email_logs: list[EmailLogResponse] = []
+
+
+class InvoiceEmitResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    user_id: str
+    client_id: str
+    invoice_number: str
+    amount: Decimal
+    currency: str
+    due_date: date
+    status: str
+    description: Optional[str]
+    reminder_config: dict
+    items: list
+    issued_date: Optional[date]
+    sent_at: Optional[datetime]
+    created_at: datetime
+    client: ClientResponse
+    email_logs: list[EmailLogResponse] = []
+    sent: bool = True
+    total: Optional[float] = None

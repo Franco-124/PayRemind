@@ -3,6 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -37,6 +38,9 @@ class Invoice(Base):
         JSONB, nullable=False, default=lambda: DEFAULT_REMINDER_CONFIG.copy()
     )
     email_config_override: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    items: Mapped[list | None] = mapped_column(PG_JSONB, nullable=True)
+    issued_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

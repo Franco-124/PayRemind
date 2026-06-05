@@ -13,6 +13,7 @@ from app.schemas.transaction import (
     CategoryResponse,
     FinancialDashboard,
     TransactionCreate,
+    TransactionFromScanRequest,
     TransactionResponse,
 )
 from app.services import finance_service
@@ -55,6 +56,20 @@ def create_transaction(
     db: Session = Depends(get_db),
 ) -> TransactionResponse:
     return finance_service.create_transaction(current_user.id, data, db)
+
+
+@router.post(
+    "/transactions/from-scan",
+    response_model=TransactionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def transaction_from_scan(
+    data: TransactionFromScanRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TransactionResponse:
+    """Create a finance transaction from an invoice scan result."""
+    return finance_service.create_transaction_from_scan(current_user.id, data, db)
 
 
 @router.delete("/transactions/{transaction_id}")

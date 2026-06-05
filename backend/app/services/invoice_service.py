@@ -1,7 +1,10 @@
 import logging
+from datetime import date, datetime, timezone
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Session, joinedload
 
@@ -10,7 +13,7 @@ logger = logging.getLogger(__name__)
 from app.models.client import Client
 from app.models.invoice import Invoice
 from app.models.user import User
-from app.schemas.invoice import InvoiceCreate, InvoiceStatusUpdate, InvoiceUpdate
+from app.schemas.invoice import InvoiceCreate, InvoiceEmitRequest, InvoiceStatusUpdate, InvoiceUpdate
 
 FREE_PLAN_INVOICE_LIMIT = 3
 
@@ -97,10 +100,12 @@ def create_invoice(user_id: str, data: InvoiceCreate, db: Session) -> Invoice:
         else {"intervals": [3, 7, 14], "active": True}
     )
 
+    invoice_number = data.invoice_number or _next_invoice_number(user_id, db)
+
     invoice = Invoice(
         user_id=user_id,
         client_id=data.client_id,
-        invoice_number=data.invoice_number,
+        invoice_number=invoice_number,
         amount=data.amount,
         currency=data.currency,
         due_date=data.due_date,
@@ -169,6 +174,163 @@ def toggle_reminders(invoice_id: str, user_id: str, db: Session) -> Invoice:
     db.refresh(invoice)
     db.refresh(invoice, ["client"])
     return invoice
+
+
+def _next_invoice_number(user_id: str, db: Session) -> str:
+    """Atomically increment the user's invoice_counter and return the formatted number."""
+    result = db.execute(
+        text(
+            "UPDATE users SET invoice_counter = invoice_counter + 1 "
+            "WHERE id = :uid RETURNING invoice_counter"
+        ),
+        {"uid": user_id},
+    )
+    counter = result.scalar()
+    db.commit()
+    return f"INV-{counter:04d}"
+
+
+def emit_invoice(user_id: str, data: InvoiceEmitRequest, db: Session) -> tuple[Invoice, bool]:
+    """Create a new invoice from line items, generate its PDF and email it to the client.
+
+    Returns:
+        (invoice, email_sent) — invoice is always persisted; email_sent may be False.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if user and user.plan == "free":
+        active_count = (
+            db.query(Invoice)
+            .filter(
+                Invoice.user_id == user_id,
+                Invoice.status.in_(["pending", "overdue"]),
+            )
+            .count()
+        )
+        if active_count >= FREE_PLAN_INVOICE_LIMIT:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="free_plan_limit_reached",
+            )
+
+    client = (
+        db.query(Client)
+        .filter(Client.id == data.client_id, Client.user_id == user_id)
+        .first()
+    )
+    if not client:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+
+    issued = data.issued_date or date.today()
+    items_with_totals = [
+        {
+            "description": item.description,
+            "quantity": item.quantity,
+            "unit_price": item.unit_price,
+            "total": round(item.quantity * item.unit_price, 2),
+        }
+        for item in data.items
+    ]
+    total = round(sum(i["total"] for i in items_with_totals), 2)
+
+    invoice_number = _next_invoice_number(user_id, db)
+
+    invoice = Invoice(
+        user_id=user_id,
+        client_id=data.client_id,
+        invoice_number=invoice_number,
+        amount=Decimal(str(total)),
+        currency=data.currency,
+        due_date=data.due_date,
+        description=data.notes,
+        reminder_config={"intervals": [3, 7, 14], "active": True},
+        items=items_with_totals,
+        issued_date=issued,
+        sent_at=None,
+    )
+    db.add(invoice)
+    _commit(db)
+    db.refresh(invoice)
+    db.refresh(invoice, ["client", "user"])
+
+    from app.services.pdf_service import generate_invoice_pdf
+    from app.services.email_service import send_invoice_email
+
+    pdf_bytes = generate_invoice_pdf(
+        invoice_number=invoice_number,
+        freelancer_name=user.full_name,
+        freelancer_email=user.email,
+        client_name=client.name,
+        client_email=client.email,
+        client_company=client.company,
+        items=items_with_totals,
+        total=total,
+        currency=data.currency,
+        issued_date=issued,
+        due_date=data.due_date,
+        notes=data.notes,
+    )
+
+    email_sent = send_invoice_email(
+        to=client.email,
+        client_name=client.name,
+        freelancer_name=user.full_name,
+        invoice_number=invoice_number,
+        total=total,
+        currency=data.currency,
+        due_date=data.due_date.strftime("%d/%m/%Y"),
+        pdf_bytes=pdf_bytes,
+    )
+
+    if email_sent:
+        invoice.sent_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(invoice)
+
+    return invoice, email_sent
+
+
+def get_invoice_pdf_bytes(invoice_id: str, user_id: str, db: Session) -> tuple[bytes, str]:
+    """Regenerate the PDF for an emitted invoice on-demand.
+
+    Returns:
+        (pdf_bytes, invoice_number)
+    Raises:
+        404 if invoice not found, 403 if not owner, 400 if invoice has no items.
+    """
+    invoice = (
+        db.query(Invoice)
+        .options(joinedload(Invoice.client), joinedload(Invoice.user))
+        .filter(Invoice.id == invoice_id)
+        .first()
+    )
+    if not invoice:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
+    if invoice.user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    if not invoice.items:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Esta factura no tiene ítems — fue creada manualmente y no tiene PDF.",
+        )
+
+    from app.services.pdf_service import generate_invoice_pdf
+    user = db.query(User).filter(User.id == user_id).first()
+
+    pdf_bytes = generate_invoice_pdf(
+        invoice_number=invoice.invoice_number,
+        freelancer_name=user.full_name,
+        freelancer_email=user.email,
+        client_name=invoice.client.name,
+        client_email=invoice.client.email,
+        client_company=invoice.client.company,
+        items=invoice.items,
+        total=float(invoice.amount),
+        currency=invoice.currency,
+        issued_date=invoice.issued_date or invoice.created_at.date(),
+        due_date=invoice.due_date,
+        notes=invoice.description,
+    )
+    return pdf_bytes, invoice.invoice_number
 
 
 def delete_invoice(invoice_id: str, user_id: str, db: Session) -> None:

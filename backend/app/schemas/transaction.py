@@ -2,7 +2,9 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.schemas.invoice_scan import InvoiceScanResult
 
 
 class CategoryResponse(BaseModel):
@@ -91,3 +93,13 @@ class FinancialDashboard(BaseModel):
     expenses_by_category: list[CategorySummary]
     budget_status: list[BudgetStatus]
     recent_transactions: list[TransactionResponse]
+
+
+class TransactionFromScanRequest(BaseModel):
+    scan_result: InvoiceScanResult
+    type: str = Field(pattern="^(income|expense)$")
+    category_id: str
+    date: Optional[date] = None
+    description: Optional[str] = None
+    amount: Optional[float] = Field(default=None, gt=0)
+    currency: Optional[str] = None
