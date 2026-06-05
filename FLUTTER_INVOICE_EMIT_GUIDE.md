@@ -1,122 +1,96 @@
-# PayRemind — Invoice Emit & Finance Integration Guide (Flutter)
+# PayRemind — Guía de integración: Invoice Emit & Finance desde Scan
 
-> Guía para el agente **antigravity** sobre los nuevos endpoints de emisión de facturas
-> con PDF y creación de transacciones financieras desde scan.
-
----
-
-## Resumen de cambios
-
-| Endpoint | Método | Auth | Descripción |
-|---|---|---|---|
-| `/invoices/emit` | `POST` | Bearer | Crea factura con ítems, genera PDF, lo envía al cliente |
-| `/invoices/{id}/pdf` | `GET` | Bearer | Descarga el PDF de una factura emitida |
-| `/finance/transactions/from-scan` | `POST` | Bearer | Crea transacción financiera desde un scan |
-
-**Cambio en endpoint existente:**
-- `POST /invoices/` — el campo `invoice_number` ahora es **opcional**. Si no se envía, el backend lo auto-asigna (`INV-0001`, `INV-0002`…).
+> **Para el agente Claude Code.**
+> Esta guía describe exactamente qué cambió en el backend y qué tenés que construir o
+> modificar en el proyecto Flutter para integrar estas dos nuevas capacidades:
+>
+> 1. Emitir facturas desde la app (con PDF generado automáticamente)
+> 2. Registrar transacciones financieras a partir de un scan de factura
 
 ---
 
-## 1. Emitir factura con PDF
+## Contexto: qué cambió en el backend
 
-### `POST /invoices/emit`
+Antes, el módulo de facturas solo permitía **registrar** facturas que ya existían fuera
+de PayRemind. El freelancer creaba la factura en otro sistema, la subía como imagen o
+ingresaba los datos manualmente, y PayRemind solo hacía el seguimiento de cobro.
 
-Crea la factura desde ítems de línea, calcula el total, genera el PDF y lo envía al email
-del cliente. Los recordatorios automáticos comienzan desde el día siguiente sin ninguna
-acción adicional.
+**Ahora el backend puede:**
 
-#### Request body
+- Crear una factura **desde cero** con ítems de línea, calcular el total y enviar el PDF
+  directamente al cliente por email en un solo llamado.
+- El número de factura (`INV-0001`, `INV-0002`…) es **auto-generado por el backend** —
+  ya no se provee desde la app.
+- El PDF se puede descargar desde la app vía un endpoint dedicado.
+- Los datos extraídos por el scan de facturas (GPT-4o) ahora se pueden convertir en una
+  transacción financiera (ingreso o egreso) en el módulo de finanzas.
 
-```json
-{
-  "client_id": "uuid-del-cliente",
-  "items": [
-    {
-      "description": "Diseño de landing page",
-      "quantity": 1.0,
-      "unit_price": 800.00
-    },
-    {
-      "description": "Revisiones adicionales",
-      "quantity": 3.0,
-      "unit_price": 50.00
-    }
-  ],
-  "currency": "USD",
-  "due_date": "2026-07-05",
-  "notes": "Pago mediante transferencia bancaria. Gracias.",
-  "issued_date": "2026-06-05"
-}
+---
+
+## Cambios que impactan código Flutter existente
+
+### ⚠️ `invoice_number` ya no se envía al crear facturas
+
+Si en el proyecto Flutter existe algún formulario o modelo que envíe `invoice_number`
+al hacer `POST /invoices/`, **eliminá ese campo**. El backend lo asigna solo.
+
+Buscá en el proyecto cualquier referencia a `'invoice_number'` dentro de un `toJson()`
+o body de request para `POST /invoices/` y removela.
+
+```dart
+// ANTES — quitar esto:
+final body = {
+  'client_id': clientId,
+  'invoice_number': 'FAC-001',   // ← eliminar
+  'amount': 500.00,
+  'due_date': '2026-07-01',
+};
+
+// AHORA — así debe quedar:
+final body = {
+  'client_id': clientId,
+  'amount': 500.00,
+  'due_date': '2026-07-01',
+};
 ```
 
-Campos:
-| Campo | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `client_id` | `string` | ✅ | UUID del cliente existente |
-| `items` | `list` | ✅ | Mínimo 1 ítem |
-| `items[].description` | `string` | ✅ | Descripción del servicio |
-| `items[].quantity` | `float` | ✅ | Cantidad (horas, unidades, etc.) |
-| `items[].unit_price` | `float` | ✅ | Precio por unidad |
-| `currency` | `string` | No | Default `"USD"` |
-| `due_date` | `string` | ✅ | Fecha de vencimiento `YYYY-MM-DD` |
-| `notes` | `string` | No | Notas al pie del PDF |
-| `issued_date` | `string` | No | Default: hoy |
+### ⚠️ El modelo `Invoice` en Dart ahora tiene campos nuevos
 
-#### Response 201
+El backend retorna tres campos nuevos en todas las respuestas de factura. Actualizá el
+modelo `Invoice` (o como se llame en el proyecto) para incluirlos:
 
-```json
-{
-  "id": "uuid-factura",
-  "user_id": "uuid-usuario",
-  "client_id": "uuid-cliente",
-  "invoice_number": "INV-0003",
-  "amount": "950.00",
-  "currency": "USD",
-  "due_date": "2026-07-05",
-  "status": "pending",
-  "description": "Pago mediante transferencia bancaria. Gracias.",
-  "reminder_config": {"intervals": [3, 7, 14], "active": true},
-  "items": [
-    {"description": "Diseño de landing page", "quantity": 1.0, "unit_price": 800.0, "total": 800.0},
-    {"description": "Revisiones adicionales", "quantity": 3.0, "unit_price": 50.0, "total": 150.0}
-  ],
-  "issued_date": "2026-06-05",
-  "sent_at": "2026-06-05T14:32:00Z",
-  "created_at": "2026-06-05T14:32:00Z",
-  "client": { ... },
-  "email_logs": [],
-  "sent": true,
-  "total": 950.0
-}
+```dart
+// Agregar estos campos al modelo Invoice existente:
+final List<InvoiceItem>? items;    // null si fue creada manualmente
+final String? issuedDate;          // YYYY-MM-DD, puede ser null
+final String? sentAt;              // ISO datetime, null si no se envió por email
 ```
 
-Campos clave de la respuesta:
-- `invoice_number` — asignado automáticamente, formato `INV-NNNN`
-- `amount` — string numérico (total), parsear con `double.parse()`
-- `total` — float con el mismo valor que `amount`
-- `sent` — `true` si el email llegó al cliente; `false` si hubo error de envío (la factura se creó igual)
-- `sent_at` — `null` si `sent: false`
-- `items[].total` — calculado por el backend (`quantity × unit_price`)
+Y en el `fromJson`:
 
-#### Errores
-| Status | detail | Causa |
-|---|---|---|
-| `400` | `"items vacío"` | Lista de ítems vacía |
-| `403` | `"free_plan_limit_reached"` | Plan free con 3 facturas activas |
-| `404` | `"Client not found"` | `client_id` inválido o no pertenece al usuario |
-| `502` | (no aplica) | El email falla pero la factura se crea; ver campo `sent` |
+```dart
+items: json['items'] != null
+    ? (json['items'] as List).map((i) => InvoiceItem.fromJson(i)).toList()
+    : null,
+issuedDate: json['issued_date'],
+sentAt: json['sent_at'],
+```
 
 ---
 
-### Modelos Dart
+## Lo que tenés que construir
+
+### 1. Modelo `InvoiceItem`
+
+Nuevo modelo para los ítems de línea de una factura. Crealo en el mismo lugar donde
+están los modelos de dominio (probablemente `lib/models/` o `lib/data/`).
 
 ```dart
 class InvoiceItem {
   final String description;
   final double quantity;
   final double unitPrice;
-  final double? total;
+  final double? total; // calculado por el backend, viene en la respuesta
 
   InvoiceItem({
     required this.description,
@@ -125,6 +99,7 @@ class InvoiceItem {
     this.total,
   });
 
+  // toJson solo incluye los campos que el backend espera en el request
   Map<String, dynamic> toJson() => {
     'description': description,
     'quantity': quantity,
@@ -138,238 +113,150 @@ class InvoiceItem {
     total: json['total'] != null ? (json['total'] as num).toDouble() : null,
   );
 }
+```
 
-class InvoiceEmitRequest {
-  final String clientId;
-  final List<InvoiceItem> items;
-  final String currency;
-  final String dueDate;       // YYYY-MM-DD
-  final String? notes;
-  final String? issuedDate;   // YYYY-MM-DD, null = hoy
+---
 
-  InvoiceEmitRequest({
-    required this.clientId,
-    required this.items,
-    this.currency = 'USD',
-    required this.dueDate,
-    this.notes,
-    this.issuedDate,
-  });
+### 2. Servicio de emisión de facturas
 
-  Map<String, dynamic> toJson() => {
+Creá (o agregá al servicio de facturas existente) los tres métodos: emitir, descargar PDF
+y abrir PDF. El cliente Dio ya existente funciona sin cambios — solo son llamadas nuevas.
+
+```dart
+// Agregar al servicio de facturas existente, o crear InvoiceEmitService
+
+/// Emite una factura nueva con ítems de línea.
+/// El backend genera el número, calcula el total y envía el PDF al cliente.
+Future<Map<String, dynamic>> emitInvoice({
+  required String clientId,
+  required List<InvoiceItem> items,
+  required String dueDate,       // YYYY-MM-DD
+  String currency = 'USD',
+  String? notes,
+  String? issuedDate,            // YYYY-MM-DD, null = hoy
+}) async {
+  final response = await dio.post('/invoices/emit', data: {
     'client_id': clientId,
     'items': items.map((i) => i.toJson()).toList(),
     'currency': currency,
     'due_date': dueDate,
     if (notes != null) 'notes': notes,
     if (issuedDate != null) 'issued_date': issuedDate,
-  };
-}
-
-class InvoiceEmitResponse {
-  final String id;
-  final String invoiceNumber;
-  final double amount;
-  final double total;
-  final String currency;
-  final String status;
-  final String dueDate;
-  final String? issuedDate;
-  final String? sentAt;
-  final bool sent;
-  final List<InvoiceItem> items;
-  // + client, email_logs, reminder_config...
-
-  InvoiceEmitResponse({
-    required this.id,
-    required this.invoiceNumber,
-    required this.amount,
-    required this.total,
-    required this.currency,
-    required this.status,
-    required this.dueDate,
-    this.issuedDate,
-    this.sentAt,
-    required this.sent,
-    required this.items,
   });
+  return response.data;
+}
 
-  factory InvoiceEmitResponse.fromJson(Map<String, dynamic> json) =>
-      InvoiceEmitResponse(
-        id: json['id'],
-        invoiceNumber: json['invoice_number'],
-        amount: double.parse(json['amount'].toString()),
-        total: (json['total'] as num).toDouble(),
-        currency: json['currency'],
-        status: json['status'],
-        dueDate: json['due_date'],
-        issuedDate: json['issued_date'],
-        sentAt: json['sent_at'],
-        sent: json['sent'] ?? true,
-        items: (json['items'] as List)
-            .map((i) => InvoiceItem.fromJson(i))
-            .toList(),
-      );
+/// Descarga el PDF de una factura emitida y lo guarda en el directorio temporal.
+/// Retorna la ruta del archivo guardado.
+/// Lanza excepción si la factura no tiene ítems (fue creada manualmente).
+Future<String> downloadInvoicePdf(String invoiceId, String invoiceNumber) async {
+  final response = await dio.get(
+    '/invoices/$invoiceId/pdf',
+    options: Options(responseType: ResponseType.bytes),
+  );
+  final dir = await getTemporaryDirectory();
+  final filePath = '${dir.path}/factura-$invoiceNumber.pdf';
+  await File(filePath).writeAsBytes(response.data);
+  return filePath;
+}
 
-  bool get emailDelivered => sent && sentAt != null;
+/// Descarga y abre el PDF en el visor nativo del dispositivo.
+Future<void> openInvoicePdf(String invoiceId, String invoiceNumber) async {
+  final path = await downloadInvoicePdf(invoiceId, invoiceNumber);
+  await OpenFile.open(path);
 }
 ```
 
-### Service Dart — emit
+> **Dependencias a agregar en `pubspec.yaml` si no están:**
+>
+> - `path_provider` — para obtener directorio temporal
+> - `open_file` — para abrir el PDF en el visor nativo del dispositivo
+
+---
+
+### 3. Pantalla de emisión de facturas (`InvoiceEmitScreen`)
+
+Esta es la pantalla principal nueva. El usuario la usa para crear una factura desde cero.
+
+**Qué debe mostrar:**
+
+- Selector de cliente (dropdown o búsqueda, llama `GET /clients/` que ya existe)
+- Lista dinámica de ítems — el usuario puede agregar/quitar filas con descripción,
+  cantidad y precio unitario
+- Total calculado en tiempo real en el frontend (`Σ quantity × unit_price`)
+- Campo de fecha de vencimiento
+- Campo de notas (opcional)
+- Botón "Emitir factura"
+
+**Comportamiento del botón:**
+
+```
+Presionar "Emitir factura"
+  │
+  ├─ Validar: al menos 1 ítem, todos los campos requeridos
+  ├─ Mostrar loading: "Generando y enviando factura..."
+  │
+  ├─ Llamar POST /invoices/emit
+  │
+  ├─ Respuesta OK (201):
+  │   ├─ Si response['sent'] == true:
+  │   │   └─ SnackBar verde: "Factura ${response['invoice_number']} enviada a ${client.email}"
+  │   └─ Si response['sent'] == false:
+  │       └─ Dialog: "Factura creada correctamente (${response['invoice_number']}),
+  │                   pero no se pudo enviar el email al cliente.
+  │                   Podés reenviarla manualmente desde el detalle de la factura."
+  │
+  └─ Navegar a InvoiceDetailScreen con el id retornado
+```
+
+**El número de factura NO se muestra en el formulario** — el usuario no lo ingresa.
+Se muestra solo en la pantalla de confirmación/detalle con el valor que devolvió el backend.
+
+---
+
+### 4. Botón "Descargar PDF" en el detalle de factura
+
+En la pantalla de detalle de factura (`InvoiceDetailScreen`), agregá un botón que descargue
+y abra el PDF. Este botón solo debe mostrarse si la factura tiene ítems (fue emitida desde
+PayRemind, no registrada manualmente).
 
 ```dart
-class InvoiceEmitService {
-  final Dio _dio;
-
-  InvoiceEmitService(this._dio);
-
-  Future<InvoiceEmitResponse> emitInvoice(InvoiceEmitRequest request) async {
-    final response = await _dio.post(
-      '/invoices/emit',
-      data: request.toJson(),
-    );
-    return InvoiceEmitResponse.fromJson(response.data);
-  }
-}
+// Mostrar el botón solo si invoice.items != null && invoice.items!.isNotEmpty
+if (invoice.items != null && invoice.items!.isNotEmpty)
+  ElevatedButton.icon(
+    icon: const Icon(Icons.picture_as_pdf),
+    label: const Text('Descargar PDF'),
+    onPressed: () async {
+      try {
+        setState(() => _loadingPdf = true);
+        await invoiceService.openInvoicePdf(invoice.id, invoice.invoiceNumber);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo generar el PDF')),
+        );
+      } finally {
+        setState(() => _loadingPdf = false);
+      }
+    },
+  ),
 ```
 
 ---
 
-## 2. Descargar PDF de factura
+### 5. Modelo `TransactionFromScanRequest`
 
-### `GET /invoices/{id}/pdf`
-
-Regenera y descarga el PDF de una factura emitida (que tenga ítems). Retorna bytes del
-archivo PDF directamente.
-
-```dart
-class InvoicePdfService {
-  final Dio _dio;
-
-  InvoicePdfService(this._dio);
-
-  /// Descarga el PDF y lo guarda en el directorio temporal del dispositivo.
-  /// Retorna la ruta del archivo guardado.
-  Future<String> downloadPdf(String invoiceId, String invoiceNumber) async {
-    final response = await _dio.get(
-      '/invoices/$invoiceId/pdf',
-      options: Options(responseType: ResponseType.bytes),
-    );
-
-    final dir = await getTemporaryDirectory();
-    final filePath = '${dir.path}/factura-$invoiceNumber.pdf';
-    final file = File(filePath);
-    await file.writeAsBytes(response.data);
-    return filePath;
-  }
-
-  /// Abre el PDF en el visor nativo del dispositivo.
-  Future<void> openPdf(String invoiceId, String invoiceNumber) async {
-    final path = await downloadPdf(invoiceId, invoiceNumber);
-    await OpenFile.open(path);
-  }
-}
-```
-
-> **Dependencias necesarias:** `path_provider`, `open_file`
-
-#### Errores
-| Status | detail | Causa |
-|---|---|---|
-| `400` | `"Esta factura no tiene ítems"` | Factura creada manualmente (sin PDF) |
-| `403` | `"Not allowed"` | Factura de otro usuario |
-| `404` | `"Invoice not found"` | ID inválido |
-
----
-
-## 3. Transacción financiera desde scan
-
-### Flujo completo
-
-```
-1. POST /invoices/scan      → InvoiceScanResult
-2. Usuario revisa datos     → puede override campos
-3. POST /finance/transactions/from-scan  → TransactionResponse
-```
-
-### `POST /finance/transactions/from-scan`
-
-#### Request body
-
-```json
-{
-  "scan_result": {
-    "invoice_number": "FAC-2026-001",
-    "amount": 1200.00,
-    "currency": "USD",
-    "due_date": "2026-06-30",
-    "client_name": "Empresa ABC",
-    "client_email": "pagos@empresa.com",
-    "description": "Servicios de desarrollo web",
-    "confidence": 0.92,
-    "raw_text": "...",
-    "warnings": []
-  },
-  "type": "income",
-  "category_id": "uuid-categoria-pago-de-factura",
-  "date": null,
-  "description": null,
-  "amount": null,
-  "currency": null
-}
-```
-
-Resolución de campos (orden de prioridad):
-| Campo | Override → Scan → Fallback |
-|---|---|
-| `amount` | `data.amount` → `scan_result.amount` → **422 si ninguno** |
-| `currency` | `data.currency` → `scan_result.currency` → `"USD"` |
-| `date` | `data.date` → `scan_result.due_date` → `hoy` |
-| `description` | `data.description` → `scan_result.description` → `"Transacción"` |
-
-#### Response 201
-
-```json
-{
-  "id": "uuid-transaccion",
-  "type": "income",
-  "amount": "1200.00",
-  "currency": "USD",
-  "description": "Servicios de desarrollo web",
-  "date": "2026-06-30",
-  "is_automatic": false,
-  "created_at": "2026-06-05T15:00:00Z",
-  "invoice_id": null,
-  "category": {
-    "id": "uuid",
-    "name": "Pago de factura",
-    "type": "income",
-    "icon": "receipt",
-    "color": "#22C55E",
-    "is_default": true
-  }
-}
-```
-
-#### Errores
-| Status | detail | Causa |
-|---|---|---|
-| `422` | `"amount is required..."` | No hay monto ni en el request ni en el scan |
-| `404` | `"Category not found"` | `category_id` inválido |
-
----
-
-### Modelos Dart
+Nuevo modelo para el endpoint que convierte un scan en transacción financiera. Agregar
+junto a los modelos de finanzas existentes.
 
 ```dart
 class TransactionFromScanRequest {
-  final InvoiceScanResult scanResult;
-  final String type;         // "income" | "expense"
+  final InvoiceScanResult scanResult; // modelo ya existente del scan
+  final String type;         // "income" o "expense"
   final String categoryId;
-  final String? date;        // YYYY-MM-DD, null = usa scan o hoy
-  final String? description;
-  final double? amount;
-  final String? currency;
+  final String? date;        // YYYY-MM-DD — si null, el backend usa due_date del scan o hoy
+  final String? description; // si null, el backend usa description del scan o "Transacción"
+  final double? amount;      // si null, el backend usa el amount del scan (si no hay ninguno → 422)
+  final String? currency;    // si null, el backend usa currency del scan o "USD"
 
   TransactionFromScanRequest({
     required this.scanResult,
@@ -393,7 +280,9 @@ class TransactionFromScanRequest {
 }
 ```
 
-> `InvoiceScanResult` necesita un método `toJson()`. Si no lo tenés, agregarlo:
+> **Importante:** `InvoiceScanResult` necesita tener un método `toJson()`. Si no lo tiene,
+> agregarlo al modelo existente:
+>
 > ```dart
 > Map<String, dynamic> toJson() => {
 >   'invoice_number': invoiceNumber,
@@ -409,98 +298,87 @@ class TransactionFromScanRequest {
 > };
 > ```
 
-### Service Dart — from-scan
+---
+
+### 6. Método en el servicio de finanzas
+
+Agregá este método al servicio de finanzas existente (donde están los métodos para
+transacciones y presupuestos):
 
 ```dart
-class FinanceScanService {
-  final Dio _dio;
-
-  FinanceScanService(this._dio);
-
-  Future<TransactionResponse> createFromScan(
-    TransactionFromScanRequest request,
-  ) async {
-    final response = await _dio.post(
-      '/finance/transactions/from-scan',
-      data: request.toJson(),
-    );
-    return TransactionResponse.fromJson(response.data);
-  }
+/// Crea una transacción financiera a partir de los datos de un scan de factura.
+/// amount es obligatorio si scan_result.amount es null — validar antes de llamar.
+Future<TransactionResponse> createTransactionFromScan(
+  TransactionFromScanRequest request,
+) async {
+  final response = await dio.post(
+    '/finance/transactions/from-scan',
+    data: request.toJson(),
+  );
+  return TransactionResponse.fromJson(response.data);
 }
 ```
 
 ---
 
-## 4. UX flows sugeridos
+### 7. Pantalla de scan → transacción (flujo de 2 pasos)
 
-### Flow: Emitir factura
+El flujo de scan ya existe en la app (llama `POST /invoices/scan`). Hay que agregar un
+segundo paso: después de ver los datos extraídos, el usuario puede registrarlos como
+transacción financiera.
 
-```
-InvoiceFormScreen
-  ├─ AddItemsWidget (lista dinámica de ítems)
-  │   └─ Muestra subtotal en tiempo real (calcular en frontend)
-  ├─ ClientPickerWidget
-  ├─ DueDatePicker
-  ├─ NotesField (opcional)
-  └─ EmitButton
-       ├─ Loading: "Generando factura..."
-       ├─ Success (sent: true):
-       │   └─ SnackBar: "Factura INV-0003 enviada a cliente@email.com"
-       │   └─ Navegar a InvoiceDetailScreen
-       └─ Partial success (sent: false):
-           └─ Dialog: "Factura creada pero el email no se pudo enviar.
-                        Podés reenviarla manualmente desde el detalle."
-```
+**Paso 1 — ya existe:** el usuario sube la imagen y ve los campos extraídos por GPT-4o.
 
-### Flow: Scan → Transacción
+**Paso 2 — construir:** después del scan, mostrar un panel de "Registrar como transacción":
 
 ```
-InvoiceScanScreen
-  ├─ Subir imagen → POST /invoices/scan
-  ├─ Mostrar campos extraídos con confianza
-  ├─ Usuario puede editar campos antes de registrar
-  ├─ Seleccionar tipo (Ingreso / Egreso)
-  ├─ Seleccionar categoría (GET /finance/categories)
-  └─ RegistrarButton → POST /finance/transactions/from-scan
-       ├─ Si amount == null en scan Y no hay override:
-       │   Mostrar campo de monto obligatorio antes de continuar
-       └─ Success: navegar a TransactionDetailScreen o Finance Dashboard
+Panel de registro de transacción
+  │
+  ├─ Mostrar campos del scan (pre-completados, editables):
+  │   ├─ Monto (si scan lo encontró, pre-completar; si no, campo requerido con foco)
+  │   ├─ Moneda (pre-completar o "USD")
+  │   ├─ Fecha (pre-completar con due_date del scan o fecha de hoy)
+  │   └─ Descripción (pre-completar o campo vacío)
+  │
+  ├─ Selector Tipo: [Ingreso] [Egreso]   (toggle / SegmentedButton)
+  │
+  ├─ Selector Categoría: dropdown con GET /finance/categories?type=income|expense
+  │   (filtrar según el tipo seleccionado)
+  │
+  └─ Botón "Registrar transacción"
+       ├─ Validar: si amount es null en scan Y no fue ingresado → mostrar error inline
+       ├─ Llamar POST /finance/transactions/from-scan
+       └─ Success: SnackBar "Transacción registrada" + navegar al Finance Dashboard
 ```
+
+**Manejo del caso sin monto:**
+El único campo que puede causar un 422 es `amount`. Si `scanResult.amount == null` y el
+usuario no ingresó un monto manualmente, mostrar el campo como requerido con error visible
+antes de llamar al backend — no esperar a que el backend rechace.
 
 ---
 
-## 5. Cambio en `POST /invoices/` existente
+## Referencia rápida de errores por endpoint
 
-El campo `invoice_number` ahora es **opcional**. Si no se envía, el backend asigna
-`INV-NNNN` automáticamente.
+### `POST /invoices/emit`
 
-```dart
-// ANTES (requería invoice_number):
-final body = {
-  'client_id': clientId,
-  'invoice_number': 'FAC-001',  // ya no es necesario
-  'amount': 500.00,
-  'due_date': '2026-07-01',
-};
+| Status                | `detail`                    | Qué mostrar al usuario                                        |
+| --------------------- | --------------------------- | ------------------------------------------------------------- |
+| `403`                 | `"free_plan_limit_reached"` | "Alcanzaste el límite de facturas activas del plan gratuito." |
+| `404`                 | `"Client not found"`        | "El cliente seleccionado no existe."                          |
+| `400`                 | items vacío                 | (prevenir en frontend con validación)                         |
+| `201` + `sent: false` | —                           | "Factura creada, pero el email no llegó."                     |
 
-// AHORA (sin invoice_number → se auto-asigna):
-final body = {
-  'client_id': clientId,
-  'amount': 500.00,
-  'due_date': '2026-07-01',
-};
-```
+### `GET /invoices/{id}/pdf`
 
----
+| Status | `detail`                        | Qué mostrar al usuario                    |
+| ------ | ------------------------------- | ----------------------------------------- |
+| `400`  | `"Esta factura no tiene ítems"` | Ocultar el botón de PDF para esta factura |
+| `404`  | `"Invoice not found"`           | Toast de error genérico                   |
 
-## 6. Configuración del cliente Dio
+### `POST /finance/transactions/from-scan`
 
-Sin cambios. Los nuevos endpoints usan el mismo cliente con Bearer token y base URL existente.
-
-```dart
-// GET /{id}/pdf — requiere responseType: bytes
-final pdfResponse = await dio.get(
-  '/invoices/$id/pdf',
-  options: Options(responseType: ResponseType.bytes),
-);
-```
+| Status | `detail`                  | Qué mostrar al usuario                 |
+| ------ | ------------------------- | -------------------------------------- |
+| `422`  | `"amount is required..."` | Mostrar campo de monto como requerido  |
+| `404`  | `"Category not found"`    | "La categoría seleccionada no existe." |
