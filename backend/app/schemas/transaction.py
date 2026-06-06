@@ -4,8 +4,6 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.invoice_scan import InvoiceScanResult
-
 
 class CategoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -16,6 +14,7 @@ class CategoryResponse(BaseModel):
     icon: Optional[str] = None
     color: Optional[str] = None
     is_default: bool
+    scan_fields: Optional[list] = None
 
 
 class TransactionCreate(BaseModel):
@@ -25,6 +24,7 @@ class TransactionCreate(BaseModel):
     currency: str = "USD"
     description: Optional[str] = None
     date: date
+    extra_data: Optional[dict] = None
 
 
 class TransactionResponse(BaseModel):
@@ -37,9 +37,20 @@ class TransactionResponse(BaseModel):
     description: Optional[str] = None
     date: date
     is_automatic: bool
+    extra_data: Optional[dict] = None
     created_at: datetime
     invoice_id: Optional[str] = None
     category: CategoryResponse
+
+
+class TransactionScanResult(BaseModel):
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    date: Optional[str] = None        # YYYY-MM-DD
+    description: Optional[str] = None
+    extra_data: dict = {}
+    confidence: float = 0.0
+    warnings: list[str] = []
 
 
 class BudgetCreate(BaseModel):
@@ -93,13 +104,3 @@ class FinancialDashboard(BaseModel):
     expenses_by_category: list[CategorySummary]
     budget_status: list[BudgetStatus]
     recent_transactions: list[TransactionResponse]
-
-
-class TransactionFromScanRequest(BaseModel):
-    scan_result: InvoiceScanResult
-    type: str = Field(pattern="^(income|expense)$")
-    category_id: str
-    date: Optional[date] = None
-    description: Optional[str] = None
-    amount: Optional[float] = Field(default=None, gt=0)
-    currency: Optional[str] = None

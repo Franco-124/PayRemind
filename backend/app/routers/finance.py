@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -13,8 +13,8 @@ from app.schemas.transaction import (
     CategoryResponse,
     FinancialDashboard,
     TransactionCreate,
-    TransactionFromScanRequest,
     TransactionResponse,
+    TransactionScanResult,
 )
 from app.services import finance_service
 from app.services.auth_service import get_current_user
@@ -24,6 +24,9 @@ router = APIRouter()
 _current_year = datetime.utcnow().year
 _current_month = datetime.utcnow().month
 
+_ALLOWED_TYPES = {"image/jpeg", "image/png"}
+_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+
 
 @router.get("/categories", response_model=list[CategoryResponse])
 def list_categories(
@@ -31,6 +34,49 @@ def list_categories(
     db: Session = Depends(get_db),
 ) -> list[CategoryResponse]:
     return finance_service.get_categories(db, type=type)
+
+
+@router.post(
+    "/transactions/scan",
+    response_model=TransactionScanResult,
+    status_code=status.HTTP_200_OK,
+)
+async def scan_transaction_image(
+    file: UploadFile = File(...),
+    category_id: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TransactionScanResult:
+    """Upload a receipt/invoice image and extract transaction fields for the given category."""
+    from app.services.transaction_scan_service import scan_for_transaction
+
+    if file.content_type not in _ALLOWED_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Formato no soportado: {file.content_type}. Solo se aceptan JPG y PNG.",
+        )
+
+    image_bytes = await file.read()
+
+    if len(image_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El archivo está vacío.",
+        )
+
+    if len(image_bytes) > _MAX_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La imagen es demasiado grande. Máximo 10 MB.",
+        )
+
+    result = scan_for_transaction(category_id, image_bytes, file.content_type, db)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found",
+        )
+    return result
 
 
 @router.get("/transactions", response_model=list[TransactionResponse])
@@ -56,20 +102,6 @@ def create_transaction(
     db: Session = Depends(get_db),
 ) -> TransactionResponse:
     return finance_service.create_transaction(current_user.id, data, db)
-
-
-@router.post(
-    "/transactions/from-scan",
-    response_model=TransactionResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def transaction_from_scan(
-    data: TransactionFromScanRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> TransactionResponse:
-    """Create a finance transaction from an invoice scan result."""
-    return finance_service.create_transaction_from_scan(current_user.id, data, db)
 
 
 @router.delete("/transactions/{transaction_id}")

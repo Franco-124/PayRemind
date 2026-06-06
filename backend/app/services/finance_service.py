@@ -17,58 +17,10 @@ from app.schemas.transaction import (
     FinancialDashboard,
     FinancialSummary,
     TransactionCreate,
-    TransactionFromScanRequest,
     TransactionResponse,
 )
 
 logger = logging.getLogger(__name__)
-
-
-def create_transaction_from_scan(
-    user_id: str,
-    data: TransactionFromScanRequest,
-    db: Session,
-) -> Transaction:
-    """Create a finance transaction from an invoice scan result.
-
-    Field resolution order: explicit override → scan_result field → sensible default.
-    Raises 422 if amount cannot be resolved from either source.
-    Raises 404 if category_id is not found.
-    """
-    from fastapi import HTTPException, status
-
-    resolved_amount = data.amount or data.scan_result.amount
-    if resolved_amount is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="amount is required — not found in scan result or request body.",
-        )
-
-    resolved_currency = data.currency or data.scan_result.currency or "USD"
-    resolved_date = data.date or (
-        date.fromisoformat(data.scan_result.due_date)
-        if data.scan_result.due_date
-        else date.today()
-    )
-    resolved_description = (
-        data.description
-        or data.scan_result.description
-        or "Transacción"
-    )
-
-    category = db.query(Category).filter(Category.id == data.category_id).first()
-    if not category:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
-
-    txn_data = TransactionCreate(
-        category_id=data.category_id,
-        type=data.type,
-        amount=Decimal(str(resolved_amount)),
-        currency=resolved_currency,
-        description=resolved_description,
-        date=resolved_date,
-    )
-    return create_transaction(user_id, txn_data, db, invoice_id=None, is_automatic=False)
 
 
 def get_categories(
@@ -99,6 +51,7 @@ def create_transaction(
         description=data.description,
         date=data.date,
         is_automatic=is_automatic,
+        extra_data=data.extra_data if hasattr(data, "extra_data") else None,
     )
     db.add(txn)
     db.commit()

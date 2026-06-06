@@ -3,6 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.user import Base
@@ -22,6 +23,7 @@ class Category(Base):
     icon: Mapped[str | None] = mapped_column(String(50), nullable=True)
     color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     is_default: Mapped[bool] = mapped_column(Boolean, default=True)
+    scan_fields: Mapped[list | None] = mapped_column(PG_JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -54,6 +56,7 @@ class Transaction(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     is_automatic: Mapped[bool] = mapped_column(Boolean, default=False)
+    extra_data: Mapped[dict | None] = mapped_column(PG_JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
