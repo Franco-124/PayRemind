@@ -50,6 +50,8 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Token:
     db.commit()
 
     access_token = create_access_token(data={"sub": user.email})
+    if not access_token:
+        raise 
     return Token(access_token=access_token, token_type="bearer")
 
 
